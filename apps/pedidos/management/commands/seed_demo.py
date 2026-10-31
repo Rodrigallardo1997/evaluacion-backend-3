@@ -201,6 +201,12 @@ class Command(BaseCommand):
         ]
 
         recetas = {}
+        mapa_imagenes = {
+            "Torta Chocolate Belga Suprema": "recetas/torta_chocolate.jpg",
+            "Cheesecake Clásico New York": "recetas/cheesecake.jpg",
+            "Caja 12 Galletas Glaseadas Gourmet": "recetas/galletas.jpg",
+            "Torta Frutos Rojos y Crema Chantilly": "recetas/torta_frutos_rojos.jpg",
+        }
         for nombre, cat, desc, rend, precio, margen, tiempo, bom in recetas_data:
             receta, _ = Receta.objects.update_or_create(
                 nombre=nombre,
@@ -211,6 +217,7 @@ class Command(BaseCommand):
                     "precio_base": precio,
                     "margen_deseado": margen,
                     "tiempo_preparacion_min": tiempo,
+                    "imagen": mapa_imagenes.get(nombre, ""),
                     "activo": True,
                 },
             )

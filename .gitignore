@@ -20,9 +20,11 @@ staticfiles/
 db.sqlite3
 db.sqlite3-journal
 
-# Media (mantener estructura pero no archivos)
+# Media (mantener estructura pero no archivos de usuarios)
 media/*
 !media/.gitkeep
+!media/recetas/
+!media/recetas/*
 
 # IDEs
 .idea/

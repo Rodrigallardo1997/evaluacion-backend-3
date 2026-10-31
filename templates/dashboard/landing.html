@@ -12,93 +12,139 @@
 
     <style>
         :root {
-            --dulce-rosa:   #F4A7B9;
-            --dulce-crema:  #FFF8F0;
-            --dulce-cafe:   #6B4226;
-            --dulce-dorado: #D4AF37;
-            --dulce-azul:   #0d6efd;
+            --dulce-rosa:        #F4A7B9;
+            --dulce-crema:       #FFF8F0;
+            --dulce-cafe:        #6B4226;
+            --dulce-cafe-oscuro: #4A2E1B;
+            --dulce-dorado:      #D4AF37;
+            --dulce-dorado-dark: #b89726;
         }
 
         body {
-            background-color: #f4f6f9;
+            background-color: var(--dulce-crema);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: #333333;
         }
 
-        /* Navbar Superior */
+        /* Navbar Superior Corporativo Marrón */
         .landing-nav {
-            background-color: #ffffff;
-            border-bottom: 1px solid rgba(0,0,0,0.08);
-            box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+            background-color: var(--dulce-cafe-oscuro);
+            border-bottom: 2px solid var(--dulce-dorado);
+            box-shadow: 0 4px 14px rgba(74, 46, 27, 0.25);
+        }
+
+        .landing-nav .nav-link {
+            color: rgba(255, 255, 255, 0.85) !important;
+            font-size: 0.92rem;
+            transition: all 0.2s;
+        }
+
+        .landing-nav .nav-link:hover {
+            color: var(--dulce-dorado) !important;
         }
 
         /* Banner Hero Principal */
         .hero-banner {
-            background: linear-gradient(135deg, #154c79 0%, #002d62 100%);
-            border-radius: 1.25rem;
+            background: linear-gradient(135deg, var(--dulce-cafe) 0%, #3A1F10 100%);
+            border-radius: 1.5rem;
             color: #ffffff;
-            padding: 3rem 2.5rem;
-            box-shadow: 0 10px 30px rgba(0, 45, 98, 0.2);
+            padding: 3.5rem 2.5rem;
+            box-shadow: 0 12px 36px rgba(107, 66, 38, 0.25);
             position: relative;
             overflow: hidden;
+            border: 1px solid rgba(212, 175, 55, 0.35);
         }
 
         .hero-badge {
-            background-color: #ffc107;
+            background-color: var(--dulce-dorado);
             color: #212529;
             font-weight: 700;
             font-size: 0.8rem;
-            padding: 0.4rem 0.9rem;
+            padding: 0.45rem 1rem;
             border-radius: 2rem;
             display: inline-block;
-            margin-bottom: 1rem;
+            margin-bottom: 1.25rem;
         }
 
         .hero-feature-card {
-            background-color: rgba(255, 255, 255, 0.12);
-            border: 1px solid rgba(255, 255, 255, 0.25);
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             backdrop-filter: blur(10px);
-            border-radius: 1rem;
-            padding: 1.5rem;
+            border-radius: 1.25rem;
+            padding: 1.75rem;
         }
 
         /* Tarjeta de Filtros */
         .filter-card {
             background: #ffffff;
-            border-radius: 1rem;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-            padding: 1.25rem 1.5rem;
-            margin-top: -2rem;
+            border-radius: 1.25rem;
+            box-shadow: 0 6px 24px rgba(107, 66, 38, 0.08);
+            padding: 1.25rem 1.75rem;
+            margin-top: -2.25rem;
             position: relative;
             z-index: 10;
+            border: 1px solid rgba(107, 66, 38, 0.1);
         }
 
         /* Tarjetas de Recetas */
         .receta-card {
             background: #ffffff;
-            border: 1px solid #e9ecef;
-            border-radius: 1rem;
-            transition: all 0.25s ease;
+            border: 1px solid rgba(107, 66, 38, 0.12);
+            border-radius: 1.25rem;
+            transition: all 0.3s ease;
             height: 100%;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(107, 66, 38, 0.05);
         }
 
         .receta-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+            transform: translateY(-6px);
+            box-shadow: 0 14px 32px rgba(107, 66, 38, 0.16);
             border-color: var(--dulce-rosa);
         }
 
+        .receta-img-container {
+            height: 200px;
+            width: 100%;
+            overflow: hidden;
+            position: relative;
+            background-color: #fcecef;
+        }
+
+        .receta-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.4s ease;
+        }
+
+        .receta-card:hover .receta-img {
+            transform: scale(1.06);
+        }
+
         .price-tag {
-            color: #198754;
-            font-size: 1.25rem;
-            font-weight: 700;
+            color: var(--dulce-cafe);
+            font-size: 1.35rem;
+            font-weight: 800;
+        }
+
+        .btn-dulce-cafe {
+            background-color: var(--dulce-cafe);
+            border-color: var(--dulce-cafe);
+            color: #ffffff;
+        }
+
+        .btn-dulce-cafe:hover {
+            background-color: var(--dulce-cafe-oscuro);
+            border-color: var(--dulce-cafe-oscuro);
+            color: #ffffff;
         }
 
         .footer-landing {
             background-color: #ffffff;
-            border-top: 1px solid #e9ecef;
+            border-top: 1px solid rgba(107, 66, 38, 0.12);
             color: #6c757d;
             font-size: 0.875rem;
         }
@@ -106,35 +152,35 @@
 </head>
 <body>
 
-<!-- Navbar Superior -->
+<!-- Navbar Superior Dulce Arte -->
 <nav class="navbar navbar-expand-lg landing-nav sticky-top py-2">
     <div class="container">
-        <a class="navbar-brand d-flex align-items-center" href="{% url 'dashboard:index' %}">
+        <a class="navbar-brand d-flex align-items-center text-white" href="{% url 'dashboard:index' %}">
             <span class="fs-2 me-2">🎂</span>
             <div>
-                <span class="fw-bold text-dark fs-5 d-block lh-1">Dulce Arte</span>
-                <small class="text-muted" style="font-size: 0.72rem;">Sistema de Trazabilidad & Gestión • EVA-3</small>
+                <span class="fw-bold fs-5 d-block lh-1 text-white">Dulce Arte</span>
+                <small class="text-white-50" style="font-size: 0.72rem;">Pastelería Artesanal & Trazabilidad • EVA-3</small>
             </div>
         </a>
 
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
-            <span class="navbar-toggler-icon"></span>
+        <button class="navbar-toggler text-white border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+            <span class="navbar-toggler-icon" style="filter: invert(1);"></span>
         </button>
 
         <div class="collapse navbar-collapse" id="navMenu">
             <ul class="navbar-nav me-auto ms-lg-4 mb-2 mb-lg-0">
                 <li class="nav-item">
-                    <a class="nav-link text-dark fw-semibold" href="#catalogo">
-                        <i class="bi bi-cake2 me-1 text-primary"></i>Especialidades
+                    <a class="nav-link fw-semibold" href="#catalogo">
+                        <i class="bi bi-cake2 me-1 text-warning"></i>Especialidades
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link text-dark fw-semibold" href="#pilares">
-                        <i class="bi bi-diagram-3 me-1 text-success"></i>Trazabilidad & BOM
+                    <a class="nav-link fw-semibold" href="#pilares">
+                        <i class="bi bi-diagram-3 me-1 text-warning"></i>Trazabilidad & BOM
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link text-dark fw-semibold" href="#despachos">
+                    <a class="nav-link fw-semibold" href="#despachos">
                         <i class="bi bi-truck me-1 text-warning"></i>Rutas & Firma
                     </a>
                 </li>
@@ -142,24 +188,24 @@
 
             <div class="d-flex align-items-center gap-2">
                 {% if user.is_authenticated %}
-                <span class="badge bg-light text-dark border px-3 py-2 small">
-                    <i class="bi bi-person-check-fill text-success me-1"></i>
+                <span class="badge bg-light text-dark px-3 py-2 small shadow-sm">
+                    <i class="bi bi-person-circle text-primary me-1"></i>
                     {{ user.username }} (<strong>{{ user.get_rol_display }}</strong>)
                 </span>
-                <a href="{% url 'dashboard:index' %}" class="btn btn-primary fw-semibold btn-sm px-3">
+                <a href="{% url 'dashboard:index' %}" class="btn btn-warning fw-bold btn-sm px-3 shadow-sm text-dark">
                     <i class="bi bi-speedometer2 me-1"></i>Ir a mi Panel
                 </a>
                 <form method="post" action="{% url 'logout' %}" class="d-inline">
                     {% csrf_token %}
-                    <button type="submit" class="btn btn-outline-secondary btn-sm" title="Cerrar sesión">
+                    <button type="submit" class="btn btn-outline-light btn-sm" title="Cerrar sesión">
                         <i class="bi bi-box-arrow-right"></i>
                     </button>
                 </form>
                 {% else %}
-                <button type="button" class="btn btn-primary fw-bold px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalLogin">
+                <button type="button" class="btn btn-outline-light fw-semibold px-3 btn-sm" data-bs-toggle="modal" data-bs-target="#modalLogin">
                     <i class="bi bi-box-arrow-in-right me-1"></i>Iniciar Sesión
                 </button>
-                <button type="button" class="btn btn-warning fw-bold px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalLogin">
+                <button type="button" class="btn btn-warning fw-bold px-3 btn-sm shadow-sm text-dark" data-bs-toggle="modal" data-bs-target="#modalLogin">
                     <i class="bi bi-lightning-charge-fill me-1"></i>Accesos Demo
                 </button>
                 {% endif %}
@@ -175,10 +221,10 @@
     <section class="hero-banner mb-4">
         <div class="row align-items-center g-4">
             <div class="col-lg-7">
-                <span class="hero-badge">
-                    <i class="bi bi-award-fill me-1"></i>Evaluación Backend EVA-3 • Django & PostgreSQL
+                <span class="hero-badge shadow-sm">
+                    <i class="bi bi-award-fill me-1"></i>Evaluación Backend EVA-3 • Django 5 & PostgreSQL 16
                 </span>
-                <h1 class="display-6 fw-bold mb-3">
+                <h1 class="display-6 fw-bold mb-3 text-white">
                     Pastelería Artesanal & Control de Producción
                 </h1>
                 <p class="lead mb-4 text-white-50 fs-6">
@@ -186,10 +232,10 @@
                 </p>
                 <div class="d-flex gap-2 flex-wrap">
                     <a href="#catalogo" class="btn btn-light fw-bold px-4 py-2 text-dark shadow-sm">
-                        <i class="bi bi-grid-fill me-1 text-primary"></i>Ver Catálogo
+                        <i class="bi bi-grid-fill me-1" style="color: var(--dulce-cafe);"></i>Ver Catálogo
                     </a>
-                    <button type="button" class="btn btn-outline-light fw-semibold px-4 py-2" data-bs-toggle="modal" data-bs-target="#modalLogin">
-                        <i class="bi bi-play-circle me-1"></i>Probar Demostración
+                    <button type="button" class="btn btn-outline-warning fw-semibold px-4 py-2 text-white" data-bs-toggle="modal" data-bs-target="#modalLogin">
+                        <i class="bi bi-play-circle me-1 text-warning"></i>Probar Demostración
                     </button>
                 </div>
             </div>
@@ -197,12 +243,12 @@
             <div class="col-lg-5">
                 <div class="hero-feature-card">
                     <div class="d-flex align-items-center mb-2">
-                        <span class="badge bg-warning text-dark p-2 rounded-circle me-2">
-                            <i class="bi bi-database-fill-check fs-5"></i>
+                        <span class="badge bg-warning text-dark p-2 rounded-circle me-2 fs-5">
+                            <i class="bi bi-database-fill-check"></i>
                         </span>
                         <div>
-                            <h5 class="fw-bold mb-0">Persistencia Transaccional</h5>
-                            <small class="text-white-50">PostgreSQL 16 en AWS EC2</small>
+                            <h5 class="fw-bold mb-0 text-white">Persistencia Transaccional</h5>
+                            <small class="text-warning">PostgreSQL 16 en AWS EC2</small>
                         </div>
                     </div>
                     <p class="small text-white-50 mb-3">
@@ -215,7 +261,7 @@
                         </div>
                         <div class="col-4 bg-white bg-opacity-10 rounded p-2">
                             <strong class="d-block text-warning fs-5">{{ total_insumos }}</strong>
-                            <span class="text-white-50" style="font-size: 0.72rem;">Insumos Stock</span>
+                            <span class="text-white-50" style="font-size: 0.72rem;">Insumos Bodega</span>
                         </div>
                         <div class="col-4 bg-white bg-opacity-10 rounded p-2">
                             <strong class="d-block text-warning fs-5">100%</strong>
@@ -231,13 +277,13 @@
     <section class="filter-card mb-5">
         <form method="get" action="#catalogo" class="row g-3 align-items-center">
             <div class="col-md-5">
-                <label class="form-label small fw-semibold text-muted mb-1">
-                    <i class="bi bi-search me-1 text-primary"></i>Buscar Producto o Ingrediente
+                <label class="form-label small fw-bold text-muted mb-1">
+                    <i class="bi bi-search me-1" style="color: var(--dulce-cafe);"></i>Buscar Producto o Ingrediente
                 </label>
-                <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Ej: Torta Selva Negra, Cheesecake, Chocolate...">
+                <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Ej: Selva Negra, Cheesecake, Galletas...">
             </div>
             <div class="col-md-4">
-                <label class="form-label small fw-semibold text-muted mb-1">
+                <label class="form-label small fw-bold text-muted mb-1">
                     <i class="bi bi-tag me-1 text-warning"></i>Categoría de Pastelería
                 </label>
                 <select name="categoria" class="form-select">
@@ -248,7 +294,7 @@
                 </select>
             </div>
             <div class="col-md-3 d-flex align-items-end gap-2">
-                <button type="submit" class="btn btn-primary fw-bold w-100 py-2">
+                <button type="submit" class="btn btn-dulce-cafe fw-bold w-100 py-2 shadow-sm">
                     <i class="bi bi-funnel me-1"></i>Filtrar
                 </button>
                 {% if q or categoria_filtro %}
@@ -258,46 +304,61 @@
         </form>
     </section>
 
-    <!-- Catálogo de Especialidades -->
+    <!-- Catálogo de Especialidades con Imágenes Reales -->
     <section id="catalogo" class="mb-5">
-        <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
             <div>
-                <h2 class="h4 fw-bold text-dark mb-0">
-                    <i class="bi bi-cake2-fill text-primary me-2"></i>Especialidades Disponibles
+                <h2 class="h4 fw-bold mb-0" style="color: var(--dulce-cafe);">
+                    <i class="bi bi-cake2-fill me-2" style="color: var(--dulce-rosa);"></i>Especialidades Artesanales
                 </h2>
-                <small class="text-muted">Recetas artesanales configuradas con Lista de Materiales (BOM)</small>
+                <small class="text-muted">Ingeniería de recetas con Lista de Materiales (BOM) y cálculo de mermas</small>
             </div>
-            <span class="badge bg-secondary-subtle text-secondary px-3 py-2 fw-semibold">
-                {{ recetas|length }} producto{{ recetas|length|pluralize }} encontrado{{ recetas|length|pluralize }}
+            <span class="badge bg-white text-dark border px-3 py-2 fw-semibold shadow-sm">
+                {{ recetas|length }} producto{{ recetas|length|pluralize }} disponible{{ recetas|length|pluralize }}
             </span>
         </div>
 
         <div class="row g-4">
             {% for r in recetas %}
-            <div class="col-md-6 col-lg-4">
-                <div class="receta-card p-3">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <span class="badge bg-primary-subtle text-primary px-2 py-1 small">
-                            {{ r.get_categoria_display }}
-                        </span>
-                        <span class="badge bg-light text-muted border small">
-                            <i class="bi bi-clock me-1"></i>{{ r.tiempo_preparacion_min }} min
-                        </span>
+            <div class="col-md-6 col-lg-3">
+                <div class="receta-card">
+                    <!-- Foto de la Receta -->
+                    <div class="receta-img-container">
+                        {% if r.imagen %}
+                        <img src="{{ r.imagen.url }}" class="receta-img" alt="{{ r.nombre }}">
+                        {% else %}
+                        <div class="d-flex align-items-center justify-content-center h-100 text-muted">
+                            <i class="bi bi-cake2 fs-1 text-dulce-rosa"></i>
+                        </div>
+                        {% endif %}
+                        <div class="position-absolute top-0 end-0 m-2">
+                            <span class="badge bg-white text-dark shadow-sm border small">
+                                <i class="bi bi-clock me-1 text-warning"></i>{{ r.tiempo_preparacion_min }} min
+                            </span>
+                        </div>
                     </div>
 
-                    <h3 class="h5 fw-bold text-dark mb-1">{{ r.nombre }}</h3>
-                    <p class="text-muted small mb-3 flex-grow-1" style="min-height: 40px;">
-                        {{ r.descripcion|truncatewords:18 }}
-                    </p>
-
-                    <div class="border-top pt-2 mt-auto d-flex justify-content-between align-items-center">
-                        <div>
-                            <small class="text-muted d-block" style="font-size: 0.72rem;">Precio base</small>
-                            <span class="price-tag">${{ r.precio_base|floatformat:0 }}</span>
+                    <div class="p-3 d-flex flex-column flex-grow-1">
+                        <div class="mb-2">
+                            <span class="badge px-2 py-1 small" style="background-color: var(--dulce-crema); color: var(--dulce-cafe); border: 1px solid rgba(107,66,38,0.2);">
+                                {{ r.get_categoria_display }}
+                            </span>
                         </div>
-                        <button type="button" class="btn btn-sm btn-outline-primary fw-semibold px-3" data-bs-toggle="modal" data-bs-target="#modalLogin">
-                            <i class="bi bi-bag-plus me-1"></i>Cotizar
-                        </button>
+
+                        <h3 class="h6 fw-bold text-dark mb-1" style="min-height: 38px;">{{ r.nombre }}</h3>
+                        <p class="text-muted small mb-3 flex-grow-1" style="font-size: 0.8rem; min-height: 48px;">
+                            {{ r.descripcion|truncatewords:14 }}
+                        </p>
+
+                        <div class="border-top pt-2 mt-auto d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-muted d-block" style="font-size: 0.7rem;">Precio base</small>
+                                <span class="price-tag">${{ r.precio_base|floatformat:0 }}</span>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-dark fw-bold px-3" data-bs-toggle="modal" data-bs-target="#modalLogin">
+                                <i class="bi bi-bag-plus me-1 text-warning"></i>Cotizar
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -305,7 +366,7 @@
             <div class="col-12 text-center py-5">
                 <i class="bi bi-search fs-1 text-muted d-block mb-2"></i>
                 <h4 class="h5 text-muted">No se encontraron productos con los filtros aplicados.</h4>
-                <a href="{% url 'dashboard:index' %}#catalogo" class="btn btn-outline-primary btn-sm mt-2">Ver todo el catálogo</a>
+                <a href="{% url 'dashboard:index' %}#catalogo" class="btn btn-outline-dark btn-sm mt-2">Ver todo el catálogo</a>
             </div>
             {% endfor %}
         </div>
@@ -314,15 +375,17 @@
     <!-- 4 Pilares del Sistema EVA-3 -->
     <section id="pilares" class="mb-5 py-4 border-top">
         <div class="text-center mb-5">
-            <span class="badge bg-primary-subtle text-primary px-3 py-2 fw-bold text-uppercase mb-2">Arquitectura de Dominio</span>
-            <h2 class="h3 fw-bold text-dark">Las 4 Reglas de Negocio Clave</h2>
+            <span class="badge px-3 py-2 fw-bold text-uppercase mb-2 shadow-sm" style="background-color: var(--dulce-cafe); color: #ffffff;">
+                Arquitectura de Dominio
+            </span>
+            <h2 class="h3 fw-bold" style="color: var(--dulce-cafe);">Las 4 Reglas de Negocio Clave</h2>
             <p class="text-muted small">Implementadas en capas: Modelos &rarr; Servicios &rarr; DRF API &rarr; Templates.</p>
         </div>
 
         <div class="row g-4">
             <div class="col-md-6 col-lg-3">
-                <div class="card h-100 border-0 shadow-sm rounded-4 p-3 border-top border-primary border-4">
-                    <div class="fs-1 text-primary mb-2"><i class="bi bi-calculator"></i></div>
+                <div class="card h-100 border-0 shadow-sm rounded-4 p-4 border-top border-4" style="border-top-color: var(--dulce-cafe) !important;">
+                    <div class="fs-1 mb-2" style="color: var(--dulce-cafe);"><i class="bi bi-calculator"></i></div>
                     <h4 class="h6 fw-bold">1. Cotización & Pedidos</h4>
                     <p class="text-muted small mb-0">
                         Asistente reactivo en 3 pasos con cálculo en vivo de IVA, descuento, 50% de anticipo y exportación a PDF formal.
@@ -330,7 +393,7 @@
                 </div>
             </div>
             <div class="col-md-6 col-lg-3">
-                <div class="card h-100 border-0 shadow-sm rounded-4 p-3 border-top border-warning border-4">
+                <div class="card h-100 border-0 shadow-sm rounded-4 p-4 border-top border-4" style="border-top-color: var(--dulce-dorado) !important;">
                     <div class="fs-1 text-warning mb-2"><i class="bi bi-kanban"></i></div>
                     <h4 class="h6 fw-bold">2. Tablero Kanban</h4>
                     <p class="text-muted small mb-0">
@@ -339,7 +402,7 @@
                 </div>
             </div>
             <div class="col-md-6 col-lg-3">
-                <div class="card h-100 border-0 shadow-sm rounded-4 p-3 border-top border-success border-4">
+                <div class="card h-100 border-0 shadow-sm rounded-4 p-4 border-top border-4" style="border-top-color: #198754 !important;">
                     <div class="fs-1 text-success mb-2"><i class="bi bi-boxes"></i></div>
                     <h4 class="h6 fw-bold">3. Escandallo BOM</h4>
                     <p class="text-muted small mb-0">
@@ -348,8 +411,8 @@
                 </div>
             </div>
             <div class="col-md-6 col-lg-3">
-                <div class="card h-100 border-0 shadow-sm rounded-4 p-3 border-top border-danger border-4">
-                    <div class="fs-1 text-danger mb-2"><i class="bi bi-truck"></i></div>
+                <div class="card h-100 border-0 shadow-sm rounded-4 p-4 border-top border-4" style="border-top-color: var(--dulce-rosa) !important;">
+                    <div class="fs-1 mb-2" style="color: var(--dulce-rosa);"><i class="bi bi-truck"></i></div>
                     <h4 class="h6 fw-bold">4. Rutas & Firma</h4>
                     <p class="text-muted small mb-0">
                         Asignación a repartidores, enlace GPS y confirmación con firma digital táctil sobre HTML5 Canvas.
@@ -365,7 +428,7 @@
 <div class="modal fade" id="modalLogin" tabindex="-1" aria-labelledby="modalLoginLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
         <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
-            <div class="modal-header bg-dark text-white p-4 pb-3 border-0">
+            <div class="modal-header p-4 pb-3 border-0 text-white" style="background-color: var(--dulce-cafe-oscuro);">
                 <div class="d-flex align-items-center">
                     <span class="fs-3 text-warning me-2"><i class="bi bi-box-arrow-in-right"></i></span>
                     <div>
@@ -396,7 +459,7 @@
                         </label>
                         <input type="password" name="password" id="modal_password" class="form-control" placeholder="Ingresa tu contraseña" required>
                     </div>
-                    <button type="submit" class="btn btn-primary fw-bold w-100 py-2 shadow-sm mb-3">
+                    <button type="submit" class="btn btn-dulce-cafe fw-bold w-100 py-2 shadow-sm mb-3">
                         <i class="bi bi-box-arrow-in-right me-1"></i>Ingresar al Sistema
                     </button>
                 </form>
@@ -434,7 +497,7 @@
 <!-- Footer -->
 <footer class="footer-landing py-4 text-center mt-5">
     <div class="container">
-        <p class="mb-1 fw-semibold text-dark">Dulce Arte &mdash; Sistema de Trazabilidad y Pedidos para Pastelería Artesanal</p>
+        <p class="mb-1 fw-bold" style="color: var(--dulce-cafe);">Dulce Arte &mdash; Sistema de Trazabilidad y Pedidos para Pastelería Artesanal</p>
         <p class="mb-0 small text-muted">
             Evaluación Parcial N°3 &bull; Desarrollo Backend &bull; Alumno: Rodrigo Alejandro Gallardo Martínez &bull; AWS EC2 & PostgreSQL 16
         </p>
