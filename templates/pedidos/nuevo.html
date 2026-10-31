@@ -166,9 +166,12 @@
                     </div>
 
                     <div class="d-flex justify-content-end gap-2 mt-4">
-                        <a href="{% url 'pedidos:index' %}" class="btn btn-outline-secondary">Cancelar</a>
-                        <button type="submit" class="btn btn-dulce px-5 py-2 fw-bold">
-                            <i class="bi bi-check2-circle me-1"></i>Guardar como Borrador
+                        <a href="{% if es_cliente %}{% url 'pedidos:mis_pedidos' %}{% else %}{% url 'pedidos:index' %}{% endif %}" class="btn btn-outline-secondary px-4 py-2">
+                            <i class="bi bi-x-circle me-1"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-dulce px-5 py-2 fw-bold shadow">
+                            <i class="bi bi-check2-circle me-1 text-warning"></i>
+                            {% if es_cliente %}Enviar Solicitud de Pedido{% else %}Guardar como Borrador{% endif %}
                         </button>
                     </div>
                 </div>

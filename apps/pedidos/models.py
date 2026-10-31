@@ -154,6 +154,8 @@ class Pedido(models.Model):
     vendedor = models.ForeignKey(
         "usuarios.Usuario",
         on_delete=models.PROTECT,
+        null=True,
+        blank=True,
         related_name="pedidos_vendidos",
         verbose_name="vendedor",
     )

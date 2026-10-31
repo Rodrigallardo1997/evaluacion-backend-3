@@ -167,7 +167,12 @@ def pedido_nuevo(request):
                     pedido = form.save(commit=False)
                     if es_cliente:
                         pedido.cliente = cliente_obj
-                        pedido.vendedor = None
+                        # Asignar vendedor responsable por defecto para trazabilidad
+                        vendedor_asignado = (
+                            Usuario.objects.filter(rol=Usuario.Rol.VENDEDOR).first()
+                            or Usuario.objects.filter(rol=Usuario.Rol.ADMIN).first()
+                        )
+                        pedido.vendedor = vendedor_asignado
                     else:
                         pedido.vendedor = request.user
                     pedido.estado = Pedido.Estado.BORRADOR

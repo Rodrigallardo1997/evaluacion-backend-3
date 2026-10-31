@@ -300,6 +300,26 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ---------------------------------------------------------------------------
+   Botones Corporativos Dulce Arte
+--------------------------------------------------------------------------- */
+.btn-dulce {
+    background-color: var(--dulce-cafe) !important;
+    border-color: var(--dulce-cafe) !important;
+    color: #ffffff !important;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(107, 66, 38, 0.2);
+    transition: all 0.2s ease-in-out;
+}
+
+.btn-dulce:hover {
+    background-color: #53331c !important;
+    border-color: #53331c !important;
+    color: #ffffff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(107, 66, 38, 0.3);
+}
+
+/* ---------------------------------------------------------------------------
    Print — Cotizaciones
 --------------------------------------------------------------------------- */
 @media print {
