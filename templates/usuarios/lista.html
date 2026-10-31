@@ -1,0 +1,210 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Usuarios y Roles — Dulce Arte{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h1 class="h3 fw-bold text-dulce-cafe mb-1">
+            <i class="bi bi-people-fill text-dulce-rosa me-2"></i>Gestión de Usuarios y Roles
+        </h1>
+        <p class="text-muted small mb-0">
+            Control centralizado de acceso. Asigna poderes de Administrador, Vendedor, Cocina o Repartidor.
+        </p>
+    </div>
+    <div>
+        <a href="{% url 'usuarios:crear' %}" class="btn btn-dulce-rosa text-white shadow-sm">
+            <i class="bi bi-person-plus-fill me-1"></i>Nuevo Usuario
+        </a>
+    </div>
+</div>
+
+<!-- Tarjetas resumen por Rol -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-2">
+        <a href="{% url 'usuarios:lista' %}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm rounded-3 text-center p-2 h-100 {% if not rol_filtro %}border-primary border-2{% endif %}">
+                <span class="text-muted small fw-semibold">Todos</span>
+                <span class="fs-4 fw-bold text-dark">{{ conteos.total }}</span>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md-2">
+        <a href="?rol=ADMIN" class="text-decoration-none">
+            <div class="card border-0 shadow-sm rounded-3 text-center p-2 h-100 bg-dark text-white {% if rol_filtro == 'ADMIN' %}ring-2{% endif %}">
+                <span class="text-warning small fw-semibold"><i class="bi bi-shield-lock-fill me-1"></i>Admin</span>
+                <span class="fs-4 fw-bold">{{ conteos.admin }}</span>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md-2">
+        <a href="?rol=VENDEDOR" class="text-decoration-none">
+            <div class="card border-0 shadow-sm rounded-3 text-center p-2 h-100 border-start border-primary border-4 {% if rol_filtro == 'VENDEDOR' %}bg-primary-subtle{% endif %}">
+                <span class="text-primary small fw-semibold"><i class="bi bi-briefcase-fill me-1"></i>Ventas</span>
+                <span class="fs-4 fw-bold text-primary">{{ conteos.vendedor }}</span>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md-2">
+        <a href="?rol=COCINA" class="text-decoration-none">
+            <div class="card border-0 shadow-sm rounded-3 text-center p-2 h-100 border-start border-warning border-4 {% if rol_filtro == 'COCINA' %}bg-warning-subtle{% endif %}">
+                <span class="text-warning-emphasis small fw-semibold"><i class="bi bi-fire me-1"></i>Cocina</span>
+                <span class="fs-4 fw-bold text-warning-emphasis">{{ conteos.cocina }}</span>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md-2">
+        <a href="?rol=REPARTIDOR" class="text-decoration-none">
+            <div class="card border-0 shadow-sm rounded-3 text-center p-2 h-100 border-start border-success border-4 {% if rol_filtro == 'REPARTIDOR' %}bg-success-subtle{% endif %}">
+                <span class="text-success small fw-semibold"><i class="bi bi-truck me-1"></i>Reparto</span>
+                <span class="fs-4 fw-bold text-success">{{ conteos.repartidor }}</span>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md-2">
+        <a href="?rol=CLIENTE" class="text-decoration-none">
+            <div class="card border-0 shadow-sm rounded-3 text-center p-2 h-100 border-start border-secondary border-4 {% if rol_filtro == 'CLIENTE' %}bg-secondary-subtle{% endif %}">
+                <span class="text-secondary small fw-semibold"><i class="bi bi-person me-1"></i>Cliente</span>
+                <span class="fs-4 fw-bold text-secondary">{{ conteos.cliente }}</span>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- Buscador y Filtros -->
+<div class="card shadow-sm border-0 rounded-4 mb-4">
+    <div class="card-body p-3">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" name="q" value="{{ q }}" class="form-control border-start-0" placeholder="Buscar por usuario, nombre o correo...">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <select name="rol" class="form-select">
+                    <option value="">-- Todos los roles --</option>
+                    {% for val, label in roles %}
+                    <option value="{{ val }}" {% if rol_filtro == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-dark w-100"><i class="bi bi-funnel me-1"></i>Filtrar</button>
+                {% if q or rol_filtro %}
+                <a href="{% url 'usuarios:lista' %}" class="btn btn-outline-secondary" title="Limpiar"><i class="bi bi-x-lg"></i></a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tabla de Usuarios y Asignación de Roles -->
+<div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th class="ps-4">Usuario</th>
+                    <th>Nombre Completo</th>
+                    <th>Contacto</th>
+                    <th>Rol Actual</th>
+                    <th style="min-width: 220px;">Asignar Poderes (Rol)</th>
+                    <th>Estado</th>
+                    <th class="text-end pe-4">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in usuarios %}
+                <tr>
+                    <td class="ps-4">
+                        <div class="d-flex align-items-center">
+                            <div class="avatar-sm rounded-circle me-2 d-flex align-items-center justify-content-center text-white fw-bold"
+                                 style="width: 38px; height: 38px; background-color: {% if u.es_admin %}#212529{% elif u.es_vendedor %}#0d6efd{% elif u.es_cocina %}#fd7e14{% elif u.es_repartidor %}#198754{% else %}#6c757d{% endif %};">
+                                {{ u.username|slice:":2"|upper }}
+                            </div>
+                            <div>
+                                <span class="fw-bold text-dark d-block">@{{ u.username }}</span>
+                                <small class="text-muted">ID #{{ u.id }}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        {{ u.get_full_name|default:"—" }}
+                    </td>
+                    <td>
+                        <div class="small">
+                            <div><i class="bi bi-envelope me-1 text-muted"></i>{{ u.email|default:"Sin correo" }}</div>
+                            {% if u.telefono %}<div><i class="bi bi-telephone me-1 text-muted"></i>{{ u.telefono }}</div>{% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        {% if u.es_admin %}
+                        <span class="badge bg-dark text-warning px-2 py-1"><i class="bi bi-shield-lock-fill me-1"></i>Administrador</span>
+                        {% elif u.es_vendedor %}
+                        <span class="badge bg-primary px-2 py-1"><i class="bi bi-briefcase-fill me-1"></i>Vendedor</span>
+                        {% elif u.es_cocina %}
+                        <span class="badge bg-warning text-dark px-2 py-1"><i class="bi bi-fire me-1"></i>Cocina</span>
+                        {% elif u.es_repartidor %}
+                        <span class="badge bg-success px-2 py-1"><i class="bi bi-truck me-1"></i>Repartidor</span>
+                        {% else %}
+                        <span class="badge bg-secondary px-2 py-1"><i class="bi bi-person me-1"></i>Cliente</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <!-- Formulario de cambio de rol rápido en 1 paso -->
+                        <form method="post" action="{% url 'usuarios:cambiar_rol' u.pk %}" class="d-flex gap-1 align-items-center">
+                            {% csrf_token %}
+                            <select name="nuevo_rol" class="form-select form-select-sm py-1" style="font-size: 0.85rem;" onchange="this.form.submit()">
+                                {% for val, label in roles %}
+                                <option value="{{ val }}" {% if u.rol == val %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </form>
+                    </td>
+                    <td>
+                        {% if u.is_active %}
+                        <span class="badge bg-success-subtle text-success"><i class="bi bi-check-circle-fill me-1"></i>Activo</span>
+                        {% else %}
+                        <span class="badge bg-danger-subtle text-danger"><i class="bi bi-x-circle-fill me-1"></i>Inactivo</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end pe-4">
+                        <a href="{% url 'usuarios:editar' u.pk %}" class="btn btn-sm btn-outline-secondary" title="Editar detalles o cambiar clave">
+                            <i class="bi bi-pencil-square"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-4 text-muted">
+                        <i class="bi bi-person-x fs-2 d-block mb-2"></i>
+                        No se encontraron usuarios con los criterios de búsqueda.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Paginación -->
+    {% if usuarios.has_other_pages %}
+    <div class="card-footer bg-white border-0 py-3">
+        <nav>
+            <ul class="pagination pagination-sm justify-content-center mb-0">
+                {% if usuarios.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ usuarios.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if rol_filtro %}&rol={{ rol_filtro }}{% endif %}">Anterior</a></li>
+                {% endif %}
+                <li class="page-item disabled"><span class="page-link">Página {{ usuarios.number }} de {{ usuarios.paginator.num_pages }}</span></li>
+                {% if usuarios.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ usuarios.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if rol_filtro %}&rol={{ rol_filtro }}{% endif %}">Siguiente</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

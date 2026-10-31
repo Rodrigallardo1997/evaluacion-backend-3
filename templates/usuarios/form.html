@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }} — Dulce Arte{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-4">
+    <div class="col-md-8 col-lg-7">
+        <div class="card shadow-sm border-0 rounded-4 p-4">
+            <div class="d-flex align-items-center mb-4 pb-3 border-bottom">
+                <a href="{% url 'usuarios:lista' %}" class="btn btn-outline-secondary btn-sm me-3">
+                    <i class="bi bi-arrow-left"></i>
+                </a>
+                <div>
+                    <h2 class="h4 fw-bold text-dulce-cafe mb-0">{{ titulo }}</h2>
+                    <small class="text-muted">Asigna roles con permisos específicos según el área operativa.</small>
+                </div>
+            </div>
+
+            <!-- Guía informativa de roles -->
+            <div class="alert alert-light border rounded-3 p-3 mb-4 small">
+                <strong class="d-block text-dark mb-1"><i class="bi bi-shield-check text-success me-1"></i>Poderes según Rol:</strong>
+                <ul class="mb-0 ps-3 text-muted">
+                    <li><strong class="text-dark">Administrador:</strong> Acceso total, reportes, auditoría de stock y Django Admin.</li>
+                    <li><strong class="text-primary">Vendedor:</strong> Cotizaciones, clientes, pedidos y pagos.</li>
+                    <li><strong class="text-warning-emphasis">Cocina:</strong> Tablero Kanban digital, escandallo BOM e insumos.</li>
+                    <li><strong class="text-success">Repartidor:</strong> Hoja de ruta, mapas y firma digital en entrega.</li>
+                    <li><strong class="text-secondary">Cliente:</strong> Portal web de seguimiento de sus pedidos.</li>
+                </ul>
+            </div>
+
+            <form method="post" novalidate>
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger py-2">
+                    {{ form.non_field_errors|join:", " }}
+                </div>
+                {% endif %}
+
+                {% if not usuario_editado %}
+                <!-- Username -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Nombre de usuario (Login) <span class="text-danger">*</span></label>
+                    {{ form.username }}
+                    {% if form.username.errors %}<div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>{% endif %}
+                </div>
+                {% endif %}
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Nombre</label>
+                        {{ form.first_name }}
+                        {% if form.first_name.errors %}<div class="text-danger small mt-1">{{ form.first_name.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Apellido</label>
+                        {{ form.last_name }}
+                        {% if form.last_name.errors %}<div class="text-danger small mt-1">{{ form.last_name.errors.0 }}</div>{% endif %}
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Correo electrónico</label>
+                        {{ form.email }}
+                        {% if form.email.errors %}<div class="text-danger small mt-1">{{ form.email.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Teléfono de contacto</label>
+                        {{ form.telefono }}
+                        {% if form.telefono.errors %}<div class="text-danger small mt-1">{{ form.telefono.errors.0 }}</div>{% endif %}
+                    </div>
+                </div>
+
+                <!-- Selector de Rol (Poderes) -->
+                <div class="mb-4 p-3 bg-light rounded-3 border">
+                    <label class="form-label fw-bold text-dulce-cafe fs-5 d-block mb-1">
+                        <i class="bi bi-award text-warning me-1"></i>Rol en la Empresa (Poderes)
+                    </label>
+                    <p class="text-muted small mb-2">Define qué secciones del sistema podrá utilizar este usuario.</p>
+                    {{ form.rol }}
+                    {% if form.rol.errors %}<div class="text-danger small mt-1">{{ form.rol.errors.0 }}</div>{% endif %}
+                </div>
+
+                {% if not usuario_editado %}
+                <!-- Contraseñas -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Contraseña inicial <span class="text-danger">*</span></label>
+                        {{ form.password }}
+                        {% if form.password.errors %}<div class="text-danger small mt-1">{{ form.password.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Confirmar contraseña <span class="text-danger">*</span></label>
+                        {{ form.password_confirm }}
+                        {% if form.password_confirm.errors %}<div class="text-danger small mt-1">{{ form.password_confirm.errors.0 }}</div>{% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <!-- Si es edición: cambio opcional de contraseña y estado -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Cambiar contraseña (opcional)</label>
+                    {{ form.nueva_password }}
+                    <small class="text-muted">Dejar vacío si no deseas modificar la contraseña actual.</small>
+                    {% if form.nueva_password.errors %}<div class="text-danger small mt-1">{{ form.nueva_password.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-check form-switch mb-4">
+                    {{ form.is_active }}
+                    <label class="form-check-label fw-semibold ms-2" for="{{ form.is_active.id_for_label }}">Usuario Activo (puede iniciar sesión)</label>
+                </div>
+                {% endif %}
+
+                <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                    <a href="{% url 'usuarios:lista' %}" class="btn btn-outline-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-dulce-rosa text-white fw-semibold px-4 shadow-sm">
+                        <i class="bi bi-check2-circle me-1"></i>{{ accion }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
