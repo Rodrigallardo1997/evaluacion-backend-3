@@ -256,7 +256,7 @@ def accion_cotizar(request, pk):
 
 
 @login_required
-@role_required("ADMIN", "VENDEDOR")
+@role_required("ADMIN", "VENDEDOR", "COCINA")
 def accion_confirmar(request, pk):
     """Acción para confirmar pedido y descontar materias primas."""
     if request.method == "POST":
