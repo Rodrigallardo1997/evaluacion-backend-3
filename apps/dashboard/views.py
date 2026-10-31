@@ -1,22 +1,63 @@
 """
-Vistas web para Dashboard y Reportes.
+Vistas web para Dashboard, Reportes y Página Pública de Servicios (Landing Page).
 """
 from datetime import timedelta
 from decimal import Decimal
 from django.contrib.auth.decorators import login_required
-from django.db.models import Sum, Count, F
-from django.shortcuts import render
+from django.db.models import Sum, Count, F, Q
+from django.shortcuts import render, redirect
 from django.utils import timezone
 
-from apps.catalogo.models import Insumo
+from apps.catalogo.models import Insumo, Receta
 from apps.despachos.models import RutaDespacho
 from apps.pedidos.models import Pedido, DetallePedido, Pago
 from apps.usuarios.permissions import role_required
 
 
-@login_required
+def landing_view(request):
+    """
+    Página pública de presentación de servicios, catálogo de especialidades
+    y showcase de trazabilidad para visitantes y evaluación docente.
+    """
+    q = request.GET.get("q", "").strip()
+    categoria_filtro = request.GET.get("categoria", "").strip()
+
+    recetas = Receta.objects.filter(activo=True).order_by("categoria", "nombre")
+
+    if q:
+        recetas = recetas.filter(
+            Q(nombre__icontains=q)
+            | Q(descripcion__icontains=q)
+        )
+    if categoria_filtro and categoria_filtro in Receta.Categoria.values:
+        recetas = recetas.filter(categoria=categoria_filtro)
+
+    # Métricas públicas de la plataforma
+    total_recetas = Receta.objects.filter(activo=True).count()
+    total_insumos = Insumo.objects.filter(activo=True).count()
+    pedidos_completados = Pedido.objects.filter(estado=Pedido.Estado.ENTREGADO).count()
+
+    context = {
+        "recetas": recetas,
+        "categorias": Receta.Categoria.choices,
+        "q": q,
+        "categoria_filtro": categoria_filtro,
+        "total_recetas": total_recetas,
+        "total_insumos": total_insumos,
+        "pedidos_completados": pedidos_completados,
+    }
+    return render(request, "dashboard/landing.html", context)
+
+
 def index(request):
-    """Vista principal del dashboard con métricas reales según rol."""
+    """
+    Ruta raíz '/':
+    - Si el usuario NO está autenticado, muestra la página pública de servicios (Landing).
+    - Si el usuario está autenticado, muestra el Panel de Control interno (Dashboard).
+    """
+    if not request.user.is_authenticated:
+        return landing_view(request)
+
     user = request.user
     hoy = timezone.localdate()
 

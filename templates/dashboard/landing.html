@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dulce Arte — Pastelería Artesanal & Trazabilidad</title>
+
+    <!-- Bootstrap 5.3 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        :root {
+            --dulce-rosa:   #F4A7B9;
+            --dulce-crema:  #FFF8F0;
+            --dulce-cafe:   #6B4226;
+            --dulce-dorado: #D4AF37;
+            --dulce-azul:   #0d6efd;
+        }
+
+        body {
+            background-color: #f4f6f9;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333333;
+        }
+
+        /* Navbar Superior */
+        .landing-nav {
+            background-color: #ffffff;
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+        }
+
+        /* Banner Hero Principal */
+        .hero-banner {
+            background: linear-gradient(135deg, #154c79 0%, #002d62 100%);
+            border-radius: 1.25rem;
+            color: #ffffff;
+            padding: 3rem 2.5rem;
+            box-shadow: 0 10px 30px rgba(0, 45, 98, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-badge {
+            background-color: #ffc107;
+            color: #212529;
+            font-weight: 700;
+            font-size: 0.8rem;
+            padding: 0.4rem 0.9rem;
+            border-radius: 2rem;
+            display: inline-block;
+            margin-bottom: 1rem;
+        }
+
+        .hero-feature-card {
+            background-color: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            padding: 1.5rem;
+        }
+
+        /* Tarjeta de Filtros */
+        .filter-card {
+            background: #ffffff;
+            border-radius: 1rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            padding: 1.25rem 1.5rem;
+            margin-top: -2rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Tarjetas de Recetas */
+        .receta-card {
+            background: #ffffff;
+            border: 1px solid #e9ecef;
+            border-radius: 1rem;
+            transition: all 0.25s ease;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .receta-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+            border-color: var(--dulce-rosa);
+        }
+
+        .price-tag {
+            color: #198754;
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .footer-landing {
+            background-color: #ffffff;
+            border-top: 1px solid #e9ecef;
+            color: #6c757d;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navbar Superior -->
+<nav class="navbar navbar-expand-lg landing-nav sticky-top py-2">
+    <div class="container">
+        <a class="navbar-brand d-flex align-items-center" href="{% url 'dashboard:index' %}">
+            <span class="fs-2 me-2">🎂</span>
+            <div>
+                <span class="fw-bold text-dark fs-5 d-block lh-1">Dulce Arte</span>
+                <small class="text-muted" style="font-size: 0.72rem;">Sistema de Trazabilidad & Gestión • EVA-3</small>
+            </div>
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navMenu">
+            <ul class="navbar-nav me-auto ms-lg-4 mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link text-dark fw-semibold" href="#catalogo">
+                        <i class="bi bi-cake2 me-1 text-primary"></i>Especialidades
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-dark fw-semibold" href="#pilares">
+                        <i class="bi bi-diagram-3 me-1 text-success"></i>Trazabilidad & BOM
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-dark fw-semibold" href="#despachos">
+                        <i class="bi bi-truck me-1 text-warning"></i>Rutas & Firma
+                    </a>
+                </li>
+            </ul>
+
+            <div class="d-flex align-items-center gap-2">
+                {% if user.is_authenticated %}
+                <span class="badge bg-light text-dark border px-3 py-2 small">
+                    <i class="bi bi-person-check-fill text-success me-1"></i>
+                    {{ user.username }} (<strong>{{ user.get_rol_display }}</strong>)
+                </span>
+                <a href="{% url 'dashboard:index' %}" class="btn btn-primary fw-semibold btn-sm px-3">
+                    <i class="bi bi-speedometer2 me-1"></i>Ir a mi Panel
+                </a>
+                <form method="post" action="{% url 'logout' %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-secondary btn-sm" title="Cerrar sesión">
+                        <i class="bi bi-box-arrow-right"></i>
+                    </button>
+                </form>
+                {% else %}
+                <button type="button" class="btn btn-primary fw-bold px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalLogin">
+                    <i class="bi bi-box-arrow-in-right me-1"></i>Iniciar Sesión
+                </button>
+                <button type="button" class="btn btn-warning fw-bold px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalLogin">
+                    <i class="bi bi-lightning-charge-fill me-1"></i>Accesos Demo
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Contenido Principal -->
+<main class="container my-4">
+
+    <!-- Hero Banner -->
+    <section class="hero-banner mb-4">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-7">
+                <span class="hero-badge">
+                    <i class="bi bi-award-fill me-1"></i>Evaluación Backend EVA-3 • Django & PostgreSQL
+                </span>
+                <h1 class="display-6 fw-bold mb-3">
+                    Pastelería Artesanal & Control de Producción
+                </h1>
+                <p class="lead mb-4 text-white-50 fs-6">
+                    Sistema integral de trazabilidad end-to-end: conecta cotizaciones personalizadas, recetas con Lista de Materiales (BOM) y merma técnica, control de cocina en Kanban digital y rutas de despacho con firma táctil móvil.
+                </p>
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="#catalogo" class="btn btn-light fw-bold px-4 py-2 text-dark shadow-sm">
+                        <i class="bi bi-grid-fill me-1 text-primary"></i>Ver Catálogo
+                    </a>
+                    <button type="button" class="btn btn-outline-light fw-semibold px-4 py-2" data-bs-toggle="modal" data-bs-target="#modalLogin">
+                        <i class="bi bi-play-circle me-1"></i>Probar Demostración
+                    </button>
+                </div>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="hero-feature-card">
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="badge bg-warning text-dark p-2 rounded-circle me-2">
+                            <i class="bi bi-database-fill-check fs-5"></i>
+                        </span>
+                        <div>
+                            <h5 class="fw-bold mb-0">Persistencia Transaccional</h5>
+                            <small class="text-white-50">PostgreSQL 16 en AWS EC2</small>
+                        </div>
+                    </div>
+                    <p class="small text-white-50 mb-3">
+                        Descuento atómico de insumos mediante <code>select_for_update()</code> y <code>transaction.atomic()</code>, garantizando cero sobreventa por concurrencia y auditoría inmutable de bodega.
+                    </p>
+                    <div class="row g-2 text-center small">
+                        <div class="col-4 bg-white bg-opacity-10 rounded p-2">
+                            <strong class="d-block text-warning fs-5">{{ total_recetas }}</strong>
+                            <span class="text-white-50" style="font-size: 0.72rem;">Recetas BOM</span>
+                        </div>
+                        <div class="col-4 bg-white bg-opacity-10 rounded p-2">
+                            <strong class="d-block text-warning fs-5">{{ total_insumos }}</strong>
+                            <span class="text-white-50" style="font-size: 0.72rem;">Insumos Stock</span>
+                        </div>
+                        <div class="col-4 bg-white bg-opacity-10 rounded p-2">
+                            <strong class="d-block text-warning fs-5">100%</strong>
+                            <span class="text-white-50" style="font-size: 0.72rem;">Trazable</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Barra de Búsqueda y Filtros -->
+    <section class="filter-card mb-5">
+        <form method="get" action="#catalogo" class="row g-3 align-items-center">
+            <div class="col-md-5">
+                <label class="form-label small fw-semibold text-muted mb-1">
+                    <i class="bi bi-search me-1 text-primary"></i>Buscar Producto o Ingrediente
+                </label>
+                <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Ej: Torta Selva Negra, Cheesecake, Chocolate...">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold text-muted mb-1">
+                    <i class="bi bi-tag me-1 text-warning"></i>Categoría de Pastelería
+                </label>
+                <select name="categoria" class="form-select">
+                    <option value="">Todas las categorías</option>
+                    {% for val, label in categorias %}
+                    <option value="{{ val }}" {% if categoria_filtro == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end gap-2">
+                <button type="submit" class="btn btn-primary fw-bold w-100 py-2">
+                    <i class="bi bi-funnel me-1"></i>Filtrar
+                </button>
+                {% if q or categoria_filtro %}
+                <a href="{% url 'dashboard:index' %}#catalogo" class="btn btn-outline-secondary py-2" title="Limpiar"><i class="bi bi-x-lg"></i></a>
+                {% endif %}
+            </div>
+        </form>
+    </section>
+
+    <!-- Catálogo de Especialidades -->
+    <section id="catalogo" class="mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h2 class="h4 fw-bold text-dark mb-0">
+                    <i class="bi bi-cake2-fill text-primary me-2"></i>Especialidades Disponibles
+                </h2>
+                <small class="text-muted">Recetas artesanales configuradas con Lista de Materiales (BOM)</small>
+            </div>
+            <span class="badge bg-secondary-subtle text-secondary px-3 py-2 fw-semibold">
+                {{ recetas|length }} producto{{ recetas|length|pluralize }} encontrado{{ recetas|length|pluralize }}
+            </span>
+        </div>
+
+        <div class="row g-4">
+            {% for r in recetas %}
+            <div class="col-md-6 col-lg-4">
+                <div class="receta-card p-3">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="badge bg-primary-subtle text-primary px-2 py-1 small">
+                            {{ r.get_categoria_display }}
+                        </span>
+                        <span class="badge bg-light text-muted border small">
+                            <i class="bi bi-clock me-1"></i>{{ r.tiempo_preparacion_min }} min
+                        </span>
+                    </div>
+
+                    <h3 class="h5 fw-bold text-dark mb-1">{{ r.nombre }}</h3>
+                    <p class="text-muted small mb-3 flex-grow-1" style="min-height: 40px;">
+                        {{ r.descripcion|truncatewords:18 }}
+                    </p>
+
+                    <div class="border-top pt-2 mt-auto d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted d-block" style="font-size: 0.72rem;">Precio base</small>
+                            <span class="price-tag">${{ r.precio_base|floatformat:0 }}</span>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-primary fw-semibold px-3" data-bs-toggle="modal" data-bs-target="#modalLogin">
+                            <i class="bi bi-bag-plus me-1"></i>Cotizar
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center py-5">
+                <i class="bi bi-search fs-1 text-muted d-block mb-2"></i>
+                <h4 class="h5 text-muted">No se encontraron productos con los filtros aplicados.</h4>
+                <a href="{% url 'dashboard:index' %}#catalogo" class="btn btn-outline-primary btn-sm mt-2">Ver todo el catálogo</a>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- 4 Pilares del Sistema EVA-3 -->
+    <section id="pilares" class="mb-5 py-4 border-top">
+        <div class="text-center mb-5">
+            <span class="badge bg-primary-subtle text-primary px-3 py-2 fw-bold text-uppercase mb-2">Arquitectura de Dominio</span>
+            <h2 class="h3 fw-bold text-dark">Las 4 Reglas de Negocio Clave</h2>
+            <p class="text-muted small">Implementadas en capas: Modelos &rarr; Servicios &rarr; DRF API &rarr; Templates.</p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-3">
+                <div class="card h-100 border-0 shadow-sm rounded-4 p-3 border-top border-primary border-4">
+                    <div class="fs-1 text-primary mb-2"><i class="bi bi-calculator"></i></div>
+                    <h4 class="h6 fw-bold">1. Cotización & Pedidos</h4>
+                    <p class="text-muted small mb-0">
+                        Asistente reactivo en 3 pasos con cálculo en vivo de IVA, descuento, 50% de anticipo y exportación a PDF formal.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="card h-100 border-0 shadow-sm rounded-4 p-3 border-top border-warning border-4">
+                    <div class="fs-1 text-warning mb-2"><i class="bi bi-kanban"></i></div>
+                    <h4 class="h6 fw-bold">2. Tablero Kanban</h4>
+                    <p class="text-muted small mb-0">
+                        Control visual de cocina en 5 columnas drag & drop (SortableJS) con control de concurrencia optimista.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="card h-100 border-0 shadow-sm rounded-4 p-3 border-top border-success border-4">
+                    <div class="fs-1 text-success mb-2"><i class="bi bi-boxes"></i></div>
+                    <h4 class="h6 fw-bold">3. Escandallo BOM</h4>
+                    <p class="text-muted small mb-0">
+                        Descuento atómico de insumos al confirmar pedido, considerando factor de merma y reversibilidad ante cancelación.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="card h-100 border-0 shadow-sm rounded-4 p-3 border-top border-danger border-4">
+                    <div class="fs-1 text-danger mb-2"><i class="bi bi-truck"></i></div>
+                    <h4 class="h6 fw-bold">4. Rutas & Firma</h4>
+                    <p class="text-muted small mb-0">
+                        Asignación a repartidores, enlace GPS y confirmación con firma digital táctil sobre HTML5 Canvas.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<!-- Modal Interactivo de Inicio de Sesión y Fast Login -->
+<div class="modal fade" id="modalLogin" tabindex="-1" aria-labelledby="modalLoginLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
+        <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
+            <div class="modal-header bg-dark text-white p-4 pb-3 border-0">
+                <div class="d-flex align-items-center">
+                    <span class="fs-3 text-warning me-2"><i class="bi bi-box-arrow-in-right"></i></span>
+                    <div>
+                        <h5 class="modal-title fw-bold" id="modalLoginLabel">Iniciar Sesión</h5>
+                        <small class="text-white-50">Acceso al Sistema Dulce Arte</small>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body p-4 pt-3">
+                <p class="text-muted small mb-4">
+                    Ingresa con tus credenciales o utiliza los <strong>accesos rápidos demo</strong> para cambiar de rol en 1 clic durante la evaluación.
+                </p>
+
+                <!-- Formulario estándar de Login Django -->
+                <form method="post" action="{% url 'login' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-muted">
+                            <i class="bi bi-person me-1"></i>Nombre de Usuario
+                        </label>
+                        <input type="text" name="username" id="modal_username" class="form-control" placeholder="Ej: admin o vendedor" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-muted">
+                            <i class="bi bi-lock me-1"></i>Contraseña
+                        </label>
+                        <input type="password" name="password" id="modal_password" class="form-control" placeholder="Ingresa tu contraseña" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary fw-bold w-100 py-2 shadow-sm mb-3">
+                        <i class="bi bi-box-arrow-in-right me-1"></i>Ingresar al Sistema
+                    </button>
+                </form>
+
+                <!-- Accesos Rápidos Demo (1 Clic) -->
+                <div class="border-top pt-3 text-center">
+                    <span class="badge bg-warning-subtle text-dark border px-2 py-1 small mb-2 d-inline-block">
+                        <i class="bi bi-lightning-charge-fill text-warning me-1"></i>
+                        <strong>Accesos Rápidos Demo (1 Clic):</strong>
+                    </span>
+
+                    <div class="d-flex flex-wrap justify-content-center gap-2 mt-2">
+                        <button type="button" class="btn btn-sm btn-dark fast-modal-btn shadow-sm" data-user="admin" data-pass="Admin123!">
+                            <i class="bi bi-shield-lock-fill text-warning me-1"></i>Admin
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-primary fast-modal-btn" data-user="vendedor" data-pass="Vendedor123!">
+                            <i class="bi bi-briefcase-fill me-1"></i>Vendedor
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-warning text-dark fast-modal-btn" data-user="cocina" data-pass="Cocina123!">
+                            <i class="bi bi-fire me-1"></i>Cocina
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-success fast-modal-btn" data-user="repartidor" data-pass="Reparto123!">
+                            <i class="bi bi-truck me-1"></i>Repartidor
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary fast-modal-btn" data-user="cliente" data-pass="Cliente123!">
+                            <i class="bi bi-person-heart me-1"></i>Cliente
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Footer -->
+<footer class="footer-landing py-4 text-center mt-5">
+    <div class="container">
+        <p class="mb-1 fw-semibold text-dark">Dulce Arte &mdash; Sistema de Trazabilidad y Pedidos para Pastelería Artesanal</p>
+        <p class="mb-0 small text-muted">
+            Evaluación Parcial N°3 &bull; Desarrollo Backend &bull; Alumno: Rodrigo Alejandro Gallardo Martínez &bull; AWS EC2 & PostgreSQL 16
+        </p>
+    </div>
+</footer>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // Manejo de Fast-Login en Modal
+    document.querySelectorAll('.fast-modal-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const user = this.getAttribute('data-user');
+            const pass = this.getAttribute('data-pass');
+            const userInput = document.getElementById('modal_username');
+            const passInput = document.getElementById('modal_password');
+            if (userInput && passInput) {
+                userInput.value = user;
+                passInput.value = pass;
+                this.disabled = true;
+                this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Entrando...';
+                document.querySelector('#modalLogin form').submit();
+            }
+        });
+    });
+</script>
+
+</body>
+</html>
