@@ -127,7 +127,7 @@ def pedidos_lista(request):
 
 
 @login_required
-@role_required("ADMIN", "VENDEDOR")
+@role_required("ADMIN", "VENDEDOR", "CLIENTE")
 def pedido_nuevo(request):
     """
     Wizard de creación de pedido en 3 pasos:
@@ -135,10 +135,24 @@ def pedido_nuevo(request):
     2. Recetas con cantidades y personalizaciones
     3. Resumen, descuento y guardado en estado BORRADOR
     """
-    recetas = Receta.objects.filter(activo=True).order_by("nombre")
+    recetas = Receta.objects.filter(activo=True).order_by("categoria", "nombre")
+    es_cliente = request.user.es_cliente
+
+    cliente_obj = None
+    if es_cliente:
+        try:
+            cliente_obj = request.user.cliente
+        except (AttributeError, Cliente.DoesNotExist):
+            cliente_obj = Cliente.objects.create(
+                usuario=request.user,
+                nombre_completo=request.user.get_full_name() or request.user.username,
+                telefono=request.user.telefono or "+56 9 1234 5678",
+                email=request.user.email or "cliente@dulcearte.cl",
+                direccion="Retiro en pastelería / Despacho a acordar",
+            )
 
     if request.method == "POST":
-        form = PedidoForm(request.POST, request.FILES)
+        form = PedidoForm(request.POST, request.FILES, es_cliente=es_cliente)
         # Recibir items dinámicos del formset
         recetas_ids = request.POST.getlist("receta_id[]")
         cantidades = request.POST.getlist("cantidad[]")
@@ -151,7 +165,11 @@ def pedido_nuevo(request):
             else:
                 with transaction.atomic():
                     pedido = form.save(commit=False)
-                    pedido.vendedor = request.user
+                    if es_cliente:
+                        pedido.cliente = cliente_obj
+                        pedido.vendedor = None
+                    else:
+                        pedido.vendedor = request.user
                     pedido.estado = Pedido.Estado.BORRADOR
                     pedido.save()
                     pedido.generar_codigo()
@@ -170,18 +188,25 @@ def pedido_nuevo(request):
                     pedido.recalcular_totales()
                     pedido.save(update_fields=["subtotal", "total", "saldo"])
 
-                    messages.success(
-                        request,
-                        f"Pedido {pedido.codigo} registrado exitosamente como BORRADOR. Puede proceder a cotizar.",
-                    )
-                    return redirect("pedidos:detalle", pk=pedido.pk)
+                    if es_cliente:
+                        messages.success(
+                            request,
+                            f"¡Tu solicitud de pedido {pedido.codigo} fue enviada con éxito! Nuestro equipo de pastelería ya lo tiene registrado.",
+                        )
+                        return redirect("pedidos:mis_pedidos")
+                    else:
+                        messages.success(
+                            request,
+                            f"Pedido {pedido.codigo} registrado exitosamente como BORRADOR. Puede proceder a cotizar.",
+                        )
+                        return redirect("pedidos:detalle", pk=pedido.pk)
     else:
-        form = PedidoForm()
+        form = PedidoForm(es_cliente=es_cliente)
 
     return render(
         request,
         "pedidos/nuevo.html",
-        {"form": form, "recetas": recetas},
+        {"form": form, "recetas": recetas, "es_cliente": es_cliente, "cliente_obj": cliente_obj},
     )
 
 

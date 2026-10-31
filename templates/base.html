@@ -179,8 +179,18 @@
                 <!-- Cliente -->
                 {% elif user.es_cliente %}
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'pedidos:mis_pedidos' %}">
-                        <i class="bi bi-bag-check me-1"></i>Mis Pedidos
+                    <a class="nav-link {% if request.resolver_match.view_name == 'pedidos:mis_pedidos' %}active{% endif %}" href="{% url 'pedidos:mis_pedidos' %}">
+                        <i class="bi bi-person-heart me-1"></i>Mis Pedidos
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.view_name == 'pedidos:nuevo' %}active{% endif %}" href="{% url 'pedidos:nuevo' %}">
+                        <i class="bi bi-plus-circle-fill me-1 text-warning"></i>Solicitar Pedido
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'dashboard:landing' %}#catalogo">
+                        <i class="bi bi-cake2 me-1"></i>Catálogo
                     </a>
                 </li>
                 {% endif %}

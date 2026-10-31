@@ -58,6 +58,10 @@ def index(request):
     if not request.user.is_authenticated:
         return landing_view(request)
 
+    # Si es cliente, redirigir directamente a su Portal de Cliente personalizado
+    if request.user.es_cliente:
+        return redirect("pedidos:mis_pedidos")
+
     user = request.user
     hoy = timezone.localdate()
 

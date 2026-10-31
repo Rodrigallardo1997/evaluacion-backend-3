@@ -58,6 +58,16 @@ class PedidoForm(forms.ModelForm):
             "descuento": forms.NumberInput(attrs={"class": "form-control", "min": "0", "step": "100"}),
         }
 
+    def __init__(self, *args, **kwargs):
+        es_cliente = kwargs.pop("es_cliente", False)
+        super().__init__(*args, **kwargs)
+        if es_cliente:
+            self.fields["cliente"].required = False
+            self.fields["cliente"].widget = forms.HiddenInput()
+            self.fields["descuento"].required = False
+            self.fields["descuento"].initial = 0
+            self.fields["descuento"].widget = forms.HiddenInput()
+
 
 class PagoForm(forms.ModelForm):
     class Meta:

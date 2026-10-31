@@ -139,6 +139,8 @@ class Receta(models.Model):
         POSTRE = "POSTRE", "Postre"
         GALLETA = "GALLETA", "Galleta"
         PAN = "PAN", "Pan"
+        DULCE = "DULCE", "Dulces & Pastelería"
+        CAFETERIA = "CAFETERIA", "Cafetería & Bebidas"
         OTRO = "OTRO", "Otro"
 
     nombre = models.CharField(
