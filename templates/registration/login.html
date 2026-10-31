@@ -201,12 +201,39 @@
             </div>
 
             <!-- Botón submit -->
-            <div class="d-grid">
+            <div class="d-grid mb-3">
                 <button type="submit" class="btn btn-dulce btn-lg">
                     <i class="bi bi-box-arrow-in-right me-2"></i>Ingresar al sistema
                 </button>
             </div>
         </form>
+
+        <!-- Accesos Rápidos Demo (1 Clic) para Demostración -->
+        <div class="mt-4 pt-3 border-top">
+            <div class="text-center mb-2">
+                <span class="badge bg-warning-subtle text-dark border px-2 py-1 small">
+                    <i class="bi bi-lightning-charge-fill text-warning me-1"></i>
+                    <strong>Accesos Rápidos Demo (1 Clic):</strong>
+                </span>
+            </div>
+            <div class="d-flex flex-wrap justify-content-center gap-2">
+                <button type="button" class="btn btn-sm btn-dark fast-login-btn shadow-sm" data-user="admin" data-pass="Admin123!" title="Acceso total y Django Admin">
+                    <i class="bi bi-shield-lock-fill text-warning me-1"></i> Admin
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-primary fast-login-btn" data-user="vendedor" data-pass="Vendedor123!" title="Cotizador y Pedidos">
+                    <i class="bi bi-briefcase-fill me-1"></i> Vendedor
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-warning text-dark fast-login-btn" data-user="cocina" data-pass="Cocina123!" title="Tablero Kanban y BOM">
+                    <i class="bi bi-fire me-1"></i> Cocina
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-success fast-login-btn" data-user="repartidor" data-pass="Reparto123!" title="Rutas y Firma Digital">
+                    <i class="bi bi-truck me-1"></i> Repartidor
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary fast-login-btn" data-user="cliente" data-pass="Cliente123!" title="Portal de Cliente">
+                    <i class="bi bi-person-heart me-1"></i> Cliente
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- Footer -->
@@ -232,6 +259,23 @@
             pwd.type = 'password';
             icon.className = 'bi bi-eye';
         }
+    });
+
+    // Accesos Rápidos Demo (1 Clic)
+    document.querySelectorAll('.fast-login-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const user = this.getAttribute('data-user');
+            const pass = this.getAttribute('data-pass');
+            const userInput = document.getElementById('{{ form.username.id_for_label }}');
+            const passInput = document.getElementById('{{ form.password.id_for_label }}');
+            if (userInput && passInput) {
+                userInput.value = user;
+                passInput.value = pass;
+                this.disabled = true;
+                this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Entrando...';
+                document.querySelector('form').submit();
+            }
+        });
     });
 </script>
 </body>
