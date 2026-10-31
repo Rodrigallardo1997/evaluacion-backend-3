@@ -113,8 +113,8 @@
 
                 <div class="d-flex justify-content-end gap-2 pt-3 border-top">
                     <a href="{% url 'usuarios:lista' %}" class="btn btn-outline-secondary">Cancelar</a>
-                    <button type="submit" class="btn btn-dulce-rosa text-white fw-semibold px-4 shadow-sm">
-                        <i class="bi bi-check2-circle me-1"></i>{{ accion }}
+                    <button type="submit" class="btn text-white fw-bold px-4 shadow-sm" style="background-color: var(--dulce-cafe); border-color: var(--dulce-cafe);">
+                        <i class="bi bi-check2-circle me-1 text-warning"></i>{{ accion }}
                     </button>
                 </div>
             </form>
