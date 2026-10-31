@@ -274,6 +274,12 @@ class Pedido(models.Model):
     # Métodos de negocio
     # ------------------------------------------------------------------
 
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        super().save(*args, **kwargs)
+        if is_new and not self.codigo:
+            self.generar_codigo()
+
     def generar_codigo(self) -> str:
         """
         Genera el código con formato DA-AAAA-NNNN usando el pk del pedido.

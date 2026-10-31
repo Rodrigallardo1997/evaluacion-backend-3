@@ -249,6 +249,7 @@ class ReglasNegocioTests(DulceArteBaseTestCase):
         pedido.save()
         emitir_cotizacion(pedido.id, self.vendedor)
         confirmar_pedido(pedido.id, self.vendedor)
+        pedido.refresh_from_db()
 
         # Segundo intento directo al stock no vuelve a descontar
         movs = descontar_stock_pedido(pedido, self.vendedor)
