@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+
+{% block title %}Ruta {{ ruta.codigo|default:ruta.id }} — Dulce Arte{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <div class="d-flex align-items-center gap-3">
+            <h1 class="h3 mb-0 text-dulce-cafe fw-bold">
+                Ruta {{ ruta.codigo|default:ruta.id }}
+            </h1>
+            {% if ruta.estado == 'PLANIFICADA' %}
+                <span class="badge bg-info text-dark fs-6">Planificada</span>
+            {% elif ruta.estado == 'EN_RUTA' %}
+                <span class="badge bg-primary fs-6">En Ruta</span>
+            {% elif ruta.estado == 'COMPLETADA' %}
+                <span class="badge bg-success fs-6">Completada</span>
+            {% else %}
+                <span class="badge bg-danger fs-6">Cancelada</span>
+            {% endif %}
+        </div>
+        <p class="text-muted small mb-0 mt-1">Fecha: {{ ruta.fecha|date:"d-m-Y" }} | Repartidor: {{ ruta.repartidor.get_full_name|default:ruta.repartidor.username }}</p>
+    </div>
+
+    <div class="d-flex gap-2">
+        {% if ruta.estado == 'PLANIFICADA' and ruta.paradas.exists %}
+            {% if user.es_admin or user == ruta.repartidor %}
+            <form method="post" action="{% url 'despachos:iniciar_ruta' ruta.id %}" onsubmit="return confirm('¿Iniciar la ruta? Todos los pedidos pasarán automáticamente a estado EN DESPACHO.');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-success fw-bold">
+                    <i class="bi bi-play-circle-fill me-1"></i>Iniciar Ruta de Despacho
+                </button>
+            </form>
+            {% endif %}
+        {% endif %}
+        <a href="{% url 'despachos:index' %}" class="btn btn-outline-secondary">Volver</a>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Información de la Ruta -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="mb-0 fw-bold text-dulce-cafe">
+                    <i class="bi bi-info-circle me-2 text-dulce-rosa"></i>Resumen de Logística
+                </h5>
+            </div>
+            <div class="card-body pt-0">
+                <div class="mb-3">
+                    <span class="text-muted small text-uppercase fw-semibold d-block">Repartidor Responsable</span>
+                    <strong class="fs-6 text-dark">{{ ruta.repartidor.get_full_name|default:ruta.repartidor.username }}</strong>
+                    <div class="text-muted small"><i class="bi bi-telephone me-1"></i>{{ ruta.repartidor.telefono|default:"Sin teléfono" }}</div>
+                </div>
+
+                <div class="mb-3">
+                    <span class="text-muted small text-uppercase fw-semibold d-block">Vehículo de Despacho</span>
+                    <strong class="text-dark">{{ ruta.vehiculo|default:"Vehículo no asignado" }}</strong>
+                </div>
+
+                <div class="p-3 bg-light rounded mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="small text-muted">Total de Paradas:</span>
+                        <strong>{{ ruta.total_paradas }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="small text-muted">Entregadas con Éxito:</span>
+                        <strong class="text-success">{{ ruta.entregadas }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="small text-muted">Paradas Pendientes:</span>
+                        <strong class="text-warning">{{ ruta.pendientes }}</strong>
+                    </div>
+                </div>
+
+                {% if ruta.observaciones %}
+                <div>
+                    <span class="text-muted small text-uppercase fw-semibold d-block mb-1">Observaciones</span>
+                    <p class="small text-muted mb-0">{{ ruta.observaciones }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Listado Ordenado de Paradas -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="mb-0 fw-bold text-dulce-cafe">
+                    <i class="bi bi-geo-alt me-2 text-dulce-rosa"></i>Itinerario y Paradas de Entrega
+                </h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light small text-uppercase">
+                        <tr>
+                            <th style="width: 8%;">Orden</th>
+                            <th>Pedido</th>
+                            <th>Cliente y Destino</th>
+                            <th>Saldo a Cobrar</th>
+                            <th>Estado</th>
+                            <th class="text-end">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for parada in ruta.paradas.all %}
+                        <tr>
+                            <td class="fw-bold text-center">
+                                <span class="badge bg-secondary rounded-circle px-2 py-2">
+                                    {{ parada.orden }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{% url 'pedidos:detalle' parada.pedido.id %}" class="fw-bold text-dulce-cafe">
+                                    {{ parada.pedido.codigo|default:parada.pedido.id }}
+                                </a>
+                            </td>
+                            <td>
+                                <div class="fw-semibold">{{ parada.pedido.cliente.nombre_completo }}</div>
+                                <div class="small text-muted mb-1">{{ parada.pedido.direccion_entrega }}</div>
+                                <a href="https://www.google.com/maps/dir/?api=1&destination={{ parada.pedido.direccion_entrega|urlencode }},Santiago,Chile" target="_blank" class="badge bg-light text-primary border text-decoration-none">
+                                    <i class="bi bi-map me-1"></i>Ver en Google Maps
+                                </a>
+                            </td>
+                            <td>
+                                {% if parada.pedido.saldo > 0 %}
+                                    <span class="text-danger fw-bold">${{ parada.pedido.saldo|floatformat:0 }}</span>
+                                {% else %}
+                                    <span class="text-success fw-semibold">Pagado ✓</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if parada.estado == 'ENTREGADO' %}
+                                    <span class="badge bg-success">Entregado</span>
+                                {% elif parada.estado == 'FALLIDO' %}
+                                    <span class="badge bg-danger">Fallido</span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark">Pendiente</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if parada.estado == 'PENDIENTE' %}
+                                    {% if user.es_admin or user == ruta.repartidor %}
+                                    <a href="{% url 'despachos:confirmar_entrega' parada.id %}" class="btn btn-sm btn-success">
+                                        <i class="bi bi-check2-circle me-1"></i>Entregar
+                                    </a>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted small">Cerrada</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">
+                                No hay paradas asignadas a esta ruta.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

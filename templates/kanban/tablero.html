@@ -1,0 +1,308 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Tablero Kanban de Cocina — Dulce Arte{% endblock %}
+
+{% block extra_css %}
+<style>
+    .kanban-board {
+        display: flex;
+        gap: 1rem;
+        overflow-x: auto;
+        padding-bottom: 1.5rem;
+        min-height: calc(100vh - 220px);
+    }
+    .kanban-col {
+        flex: 0 0 300px;
+        background-color: #f8f6f4;
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        border-top: 4px solid #6B4226;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .kanban-col[data-estado="CONFIRMADO"] { border-top-color: #0d6efd; }
+    .kanban-col[data-estado="EN_PREPARACION"] { border-top-color: #fd7e14; }
+    .kanban-col[data-estado="HORNEADO_DECORADO"] { border-top-color: #ffc107; }
+    .kanban-col[data-estado="CONTROL_CALIDAD"] { border-top-color: #20c997; }
+    .kanban-col[data-estado="LISTO"] { border-top-color: #198754; }
+
+    .kanban-cards {
+        flex-grow: 1;
+        padding: 0.75rem;
+        overflow-y: auto;
+        min-height: 200px;
+    }
+    .kanban-card {
+        background: #fff;
+        border-radius: 6px;
+        padding: 0.85rem;
+        margin-bottom: 0.75rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        cursor: grab;
+        border-left: 4px solid #6c757d;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .kanban-card:active { cursor: grabbing; }
+    .kanban-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+    }
+    .kanban-card.prioridad-urgente { border-left-color: #dc3545; }
+    .kanban-card.prioridad-alta { border-left-color: #fd7e14; }
+    .kanban-card.prioridad-media { border-left-color: #0d6efd; }
+    .kanban-card.prioridad-baja { border-left-color: #6c757d; }
+
+    .sortable-ghost {
+        opacity: 0.4;
+        background-color: #e9ecef;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="h3 mb-0 text-dulce-cafe fw-bold">
+            <i class="bi bi-kanban me-2 text-warning"></i>Tablero Kanban de Cocina
+        </h1>
+        <p class="text-muted small mb-0">Control de producción en tiempo real desde confirmación hasta empaque y entrega.</p>
+    </div>
+
+    <!-- Filtros rápidos y Auto-refresh -->
+    <div class="d-flex align-items-center gap-3">
+        <div class="form-check form-switch mb-0">
+            <input class="form-check-input" type="checkbox" id="checkAutoRefresh" checked>
+            <label class="form-check-label small text-muted" for="checkAutoRefresh">Auto-actualizar (60s)</label>
+        </div>
+        <button id="btnRecargarKanban" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+        </button>
+    </div>
+</div>
+
+<!-- Tablero Kanban de 5 Columnas -->
+<div class="kanban-board" id="kanbanBoard">
+    <!-- Columna 1: Recibido (CONFIRMADO) -->
+    <div class="kanban-col" data-col="recibido" data-estado="CONFIRMADO">
+        <div class="p-3 pb-2 d-flex justify-content-between align-items-center border-bottom bg-white rounded-top">
+            <span class="fw-bold text-dark">
+                <i class="bi bi-inbox me-1 text-primary"></i>1. Recibido
+            </span>
+            <span class="badge bg-primary rounded-pill contador-col">0</span>
+        </div>
+        <div class="kanban-cards" id="col-recibido"></div>
+    </div>
+
+    <!-- Columna 2: En Preparación (EN_PREPARACION) -->
+    <div class="kanban-col" data-col="en_preparacion" data-estado="EN_PREPARACION">
+        <div class="p-3 pb-2 d-flex justify-content-between align-items-center border-bottom bg-white rounded-top">
+            <span class="fw-bold text-dark">
+                <i class="bi bi-fire me-1 text-warning"></i>2. En Preparación
+            </span>
+            <span class="badge bg-warning text-dark rounded-pill contador-col">0</span>
+        </div>
+        <div class="kanban-cards" id="col-en_preparacion"></div>
+    </div>
+
+    <!-- Columna 3: Horneado/Decorado (HORNEADO_DECORADO) -->
+    <div class="kanban-col" data-col="horneado" data-estado="HORNEADO_DECORADO">
+        <div class="p-3 pb-2 d-flex justify-content-between align-items-center border-bottom bg-white rounded-top">
+            <span class="fw-bold text-dark">
+                <i class="bi bi-palette me-1 text-warning"></i>3. Horneado / Decorado
+            </span>
+            <span class="badge bg-warning text-dark rounded-pill contador-col">0</span>
+        </div>
+        <div class="kanban-cards" id="col-horneado"></div>
+    </div>
+
+    <!-- Columna 4: Control de Calidad (CONTROL_CALIDAD) -->
+    <div class="kanban-col" data-col="calidad" data-estado="CONTROL_CALIDAD">
+        <div class="p-3 pb-2 d-flex justify-content-between align-items-center border-bottom bg-white rounded-top">
+            <span class="fw-bold text-dark">
+                <i class="bi bi-search me-1 text-info"></i>4. Control de Calidad
+            </span>
+            <span class="badge bg-info text-dark rounded-pill contador-col">0</span>
+        </div>
+        <div class="kanban-cards" id="col-calidad"></div>
+    </div>
+
+    <!-- Columna 5: Listo (LISTO) -->
+    <div class="kanban-col" data-col="listo" data-estado="LISTO">
+        <div class="p-3 pb-2 d-flex justify-content-between align-items-center border-bottom bg-white rounded-top">
+            <span class="fw-bold text-dark">
+                <i class="bi bi-check2-all me-1 text-success"></i>5. Listo para Despacho
+            </span>
+            <span class="badge bg-success rounded-pill contador-col">0</span>
+        </div>
+        <div class="kanban-cards" id="col-listo"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- SortableJS CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+<script>
+    // Helper para CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function mostrarToast(mensaje, tipo = "info") {
+        const toastEl = document.getElementById("toastPrincipal");
+        const msgEl = document.getElementById("toastMensaje");
+        if (!toastEl || !msgEl) return;
+
+        toastEl.className = `toast align-items-center text-white border-0 bg-${tipo === 'error' ? 'danger' : (tipo === 'warning' ? 'warning text-dark' : 'success')}`;
+        msgEl.textContent = mensaje;
+        const toast = new bootstrap.Toast(toastEl, { delay: 4000 });
+        toast.show();
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const columnas = ["recibido", "en_preparacion", "horneado", "calidad", "listo"];
+        const estadosMap = {
+            "recibido": "CONFIRMADO",
+            "en_preparacion": "EN_PREPARACION",
+            "horneado": "HORNEADO_DECORADO",
+            "calidad": "CONTROL_CALIDAD",
+            "listo": "LISTO"
+        };
+
+        // Cargar datos del Kanban desde la API
+        function cargarKanban() {
+            fetch("/api/pedidos/kanban/", {
+                headers: { "Accept": "application/json" }
+            })
+            .then(res => res.json())
+            .then(data => {
+                columnas.forEach(colKey => {
+                    const colData = data[colKey];
+                    const contEl = document.getElementById(`col-${colKey}`);
+                    const badgeContador = contEl.closest(".kanban-col").querySelector(".contador-col");
+
+                    if (colData && contEl) {
+                        badgeContador.textContent = colData.total;
+                        contEl.innerHTML = "";
+
+                        colData.pedidos.forEach(p => {
+                            const card = document.createElement("div");
+                            card.className = `kanban-card prioridad-${p.prioridad.toLowerCase()}`;
+                            card.setAttribute("data-id", p.id);
+                            card.setAttribute("data-version", p.version);
+                            card.setAttribute("data-col-origen", colKey);
+
+                            card.innerHTML = `
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <a href="/pedidos/${p.id}/" class="fw-bold text-dulce-cafe text-decoration-none small">
+                                        ${p.codigo || '#' + p.id}
+                                    </a>
+                                    <span class="badge bg-light text-dark border small">${p.prioridad_display}</span>
+                                </div>
+                                <div class="fw-semibold text-dark small mb-1">${p.cliente_nombre}</div>
+                                <div class="small text-muted mb-2">
+                                    <i class="bi bi-clock me-1"></i>${new Date(p.fecha_entrega).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} hrs
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center pt-1 border-top small">
+                                    <span class="text-muted">Total:</span>
+                                    <strong class="text-dark">$${Math.round(p.total).toLocaleString("es-CL")}</strong>
+                                </div>
+                            `;
+                            contEl.appendChild(card);
+                        });
+                    }
+                });
+            })
+            .catch(err => {
+                console.error("Error al cargar tablero Kanban:", err);
+            });
+        }
+
+        // Inicializar SortableJS en cada columna
+        columnas.forEach(colKey => {
+            const el = document.getElementById(`col-${colKey}`);
+            if (el) {
+                new Sortable(el, {
+                    group: "kanban",
+                    animation: 150,
+                    ghostClass: "sortable-ghost",
+                    onEnd: function (evt) {
+                        const itemEl = evt.item;
+                        const pedidoId = itemEl.getAttribute("data-id");
+                        const version = parseInt(itemEl.getAttribute("data-version"), 10);
+                        const colDestino = evt.to.closest(".kanban-col").getAttribute("data-col");
+                        const nuevoEstado = estadosMap[colDestino];
+                        const colOrigen = itemEl.getAttribute("data-col-origen");
+
+                        if (colOrigen === colDestino) return;
+
+                        // Llamada a la API PATCH /api/pedidos/{id}/estado/
+                        fetch(`/api/pedidos/${pedidoId}/estado/`, {
+                            method: "PATCH",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "X-CSRFToken": getCookie("csrftoken")
+                            },
+                            body: JSON.stringify({
+                                estado: nuevoEstado,
+                                version: version,
+                                observacion: `Movido en Kanban a ${nuevoEstado}`
+                            })
+                        })
+                        .then(res => {
+                            if (res.status === 409) {
+                                // Conflicto optimista
+                                evt.from.appendChild(itemEl);
+                                mostrarToast("Conflicto: El pedido fue actualizado por otro usuario. Recargando tablero...", "warning");
+                                setTimeout(cargarKanban, 1000);
+                                return null;
+                            }
+                            if (!res.ok) {
+                                return res.json().then(data => { throw new Error(data.detail || "Error en transición"); });
+                            }
+                            return res.json();
+                        })
+                        .then(data => {
+                            if (data) {
+                                itemEl.setAttribute("data-version", data.pedido.version);
+                                itemEl.setAttribute("data-col-origen", colDestino);
+                                mostrarToast(`Pedido ${data.pedido.codigo} actualizado a ${data.pedido.estado_display}.`, "success");
+                                cargarKanban();
+                            }
+                        })
+                        .catch(err => {
+                            // Rollback visual si falló la transición
+                            evt.from.appendChild(itemEl);
+                            mostrarToast(err.message, "error");
+                        });
+                    }
+                });
+            }
+        });
+
+        // Botón recargar y auto-refresh
+        document.getElementById("btnRecargarKanban").addEventListener("click", cargarKanban);
+        setInterval(function () {
+            const check = document.getElementById("checkAutoRefresh");
+            if (check && check.checked) {
+                cargarKanban();
+            }
+        }, 60000);
+
+        // Carga inicial
+        cargarKanban();
+    });
+</script>
+{% endblock %}

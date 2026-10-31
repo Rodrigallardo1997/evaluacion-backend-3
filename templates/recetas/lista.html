@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+
+{% block title %}Recetas y Lista de Materiales (BOM) — Dulce Arte{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-0 text-dulce-cafe fw-bold">
+            <i class="bi bi-journal-richtext me-2"></i>Catálogo de Recetas y BOM
+        </h1>
+        <p class="text-muted small mb-0">Estructura de Lista de Materiales, costos de producción y márgenes comerciales.</p>
+    </div>
+    {% if user.es_admin or user.es_cocina %}
+    <a href="{% url 'catalogo:receta_nueva' %}" class="btn btn-dulce shadow-sm">
+        <i class="bi bi-plus-circle me-1"></i>Nueva Receta con BOM
+    </a>
+    {% endif %}
+</div>
+
+<!-- Filtros -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-6">
+                <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Buscar por nombre de receta...">
+            </div>
+            <div class="col-md-4">
+                <select name="categoria" class="form-select">
+                    <option value="">Todas las categorías</option>
+                    {% for c_val, c_lbl in categorias %}
+                    <option value="{{ c_val }}" {% if categoria_actual == c_val %}selected{% endif %}>{{ c_lbl }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-dulce flex-grow-1">Filtrar</button>
+                <a href="{% url 'catalogo:index' %}" class="btn btn-outline-secondary">Limpiar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Grid de Recetas -->
+<div class="row g-4 mb-4">
+    {% for r in recetas %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            {% if r.imagen %}
+            <img src="{{ r.imagen.url }}" class="card-img-top" alt="{{ r.nombre }}" style="height: 180px; object-fit: cover;">
+            {% else %}
+            <div class="bg-light d-flex align-items-center justify-content-center text-muted" style="height: 180px;">
+                <i class="bi bi-cake2 fs-1 text-dulce-rosa"></i>
+            </div>
+            {% endif %}
+
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h5 class="card-title fw-bold text-dulce-cafe mb-0">{{ r.nombre }}</h5>
+                    <span class="badge bg-light text-dark border">{{ r.get_categoria_display }}</span>
+                </div>
+                <p class="card-text text-muted small mb-3">{{ r.descripcion|truncatechars:90 }}</p>
+
+                <!-- Panel de Costos y Precios -->
+                <div class="bg-light p-3 rounded mb-3">
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span class="text-muted">Costo Insumos (BOM):</span>
+                        <strong class="text-dark">${{ r.costo_insumos|floatformat:2 }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span class="text-muted">Costo Unit. Producción:</span>
+                        <strong class="text-dark">${{ r.costo_unitario_produccion|floatformat:2 }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span class="text-muted">Margen Real:</span>
+                        <span class="badge {% if r.margen_real >= r.margen_deseado %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                            {{ r.margen_real|floatformat:1 }}%
+                        </span>
+                    </div>
+                    <hr class="my-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-bold text-dark">Precio Base:</span>
+                        <span class="fw-bold fs-5 text-success">${{ r.precio_base|floatformat:0 }}</span>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center small text-muted">
+                    <span><i class="bi bi-clock me-1"></i>{{ r.tiempo_preparacion_min }} min</span>
+                    <span><i class="bi bi-box me-1"></i>Rinde: {{ r.rendimiento }} un.</span>
+                    <span><i class="bi bi-layers me-1"></i>{{ r.insumos.count }} insumos</span>
+                </div>
+            </div>
+
+            {% if user.es_admin or user.es_cocina %}
+            <div class="card-footer bg-white border-0 pt-0 pb-3">
+                <a href="{% url 'catalogo:receta_editar' r.id %}" class="btn btn-sm btn-outline-secondary w-100">
+                    <i class="bi bi-pencil me-1"></i>Editar Receta y BOM
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center py-5 text-muted">
+        <i class="bi bi-journal-x fs-1 d-block mb-3"></i>
+        No se encontraron recetas con los filtros aplicados.
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

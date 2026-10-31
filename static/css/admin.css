@@ -1,0 +1,95 @@
+/* static/css/admin.css - Branding Dulce Arte para Django Admin */
+:root {
+    --dulce-rosa: #F4A7B9;
+    --dulce-rosa-oscuro: #E27B99;
+    --dulce-crema: #FFF8F0;
+    --dulce-cafe: #6B4226;
+    --dulce-cafe-oscuro: #4A2E1B;
+    --dulce-dorado: #D4AF37;
+}
+
+/* Encabezado */
+#header {
+    background: linear-gradient(135deg, var(--dulce-cafe), var(--dulce-cafe-oscuro)) !important;
+    color: var(--dulce-crema) !important;
+    border-bottom: 3px solid var(--dulce-rosa);
+}
+
+#branding h1 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+#branding h1 a:link, #branding h1 a:visited {
+    color: #FFF !important;
+    text-decoration: none;
+}
+
+#branding h1 span.logo-sub {
+    font-size: 13px;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    color: var(--dulce-rosa);
+    display: block;
+    font-weight: normal;
+}
+
+/* Barra de navegación superior */
+div.breadcrumbs {
+    background: #55331C !important;
+    color: var(--dulce-crema) !important;
+}
+
+div.breadcrumbs a {
+    color: var(--dulce-rosa) !important;
+}
+
+/* Botones principales */
+.button, input[type=submit], input[type=button], .submit-row input, a.button {
+    background: var(--dulce-cafe) !important;
+    border-color: var(--dulce-cafe-oscuro) !important;
+    color: #FFF !important;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+.button:hover, input[type=submit]:hover, input[type=button]:hover, .submit-row input:hover {
+    background: var(--dulce-rosa-oscuro) !important;
+    border-color: var(--dulce-rosa-oscuro) !important;
+    color: #FFF !important;
+}
+
+.button.default, input[type=submit].default, .submit-row input.default {
+    background: #8A4B2D !important;
+    border-color: #6B361B !important;
+}
+
+/* Tablas y listados */
+#changelist table thead th {
+    background: #F8F3EE !important;
+    color: var(--dulce-cafe) !important;
+    font-weight: 700;
+}
+
+#changelist table tbody tr.selected {
+    background-color: #FFF0F4 !important;
+}
+
+/* Enlaces */
+a:link, a:visited {
+    color: #8A4B2D;
+}
+
+a:hover {
+    color: var(--dulce-rosa-oscuro);
+}
+
+/* Footer institucional */
+.admin-footer-dulcearte {
+    text-align: center;
+    padding: 20px 0;
+    margin-top: 40px;
+    border-top: 1px solid #E5D8CC;
+    font-size: 12px;
+    color: #8C7667;
+}

@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+
+{% block title %}Clientes — Dulce Arte{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-0 text-dulce-cafe fw-bold">
+            <i class="bi bi-people me-2"></i>Cartera de Clientes
+        </h1>
+        <p class="text-muted small mb-0">Gestión de clientes y registros de contacto.</p>
+    </div>
+    {% if user.es_admin or user.es_vendedor %}
+    <a href="{% url 'pedidos:cliente_nuevo' %}" class="btn btn-dulce shadow-sm">
+        <i class="bi bi-person-plus me-1"></i>Nuevo Cliente
+    </a>
+    {% endif %}
+</div>
+
+<!-- Barra de búsqueda -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-2">
+            <div class="col-md-10">
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                    <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Buscar por nombre, RUT o teléfono...">
+                </div>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-dulce flex-grow-1">Buscar</button>
+                {% if q %}
+                <a href="{% url 'pedidos:clientes' %}" class="btn btn-outline-secondary">Limpiar</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tabla de clientes -->
+<div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light text-muted small text-uppercase">
+                <tr>
+                    <th>Nombre Completo</th>
+                    <th>RUT</th>
+                    <th>Contacto</th>
+                    <th>Dirección</th>
+                    <th>Pedidos</th>
+                    <th>Estado</th>
+                    {% if user.es_admin or user.es_vendedor %}
+                    <th class="text-end">Acciones</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in clientes %}
+                <tr>
+                    <td class="fw-bold text-dark">{{ c.nombre_completo }}</td>
+                    <td>{{ c.rut|default:"—" }}</td>
+                    <td>
+                        <div><i class="bi bi-telephone text-muted me-1"></i>{{ c.telefono }}</div>
+                        {% if c.email %}
+                        <div class="small text-muted"><i class="bi bi-envelope text-muted me-1"></i>{{ c.email }}</div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span>{{ c.direccion }}</span>
+                        {% if c.referencia_direccion %}
+                        <div class="small text-muted">Ref: {{ c.referencia_direccion }}</div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge bg-light text-dark border">
+                            {{ c.pedidos.count }} pedidos
+                        </span>
+                    </td>
+                    <td>
+                        {% if c.activo %}
+                        <span class="badge bg-success">Activo</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Inactivo</span>
+                        {% endif %}
+                    </td>
+                    {% if user.es_admin or user.es_vendedor %}
+                    <td class="text-end">
+                        <a href="{% url 'pedidos:cliente_editar' c.id %}" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-4 text-muted">
+                        No se encontraron clientes registrados.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if clientes.has_other_pages %}
+    <div class="card-footer bg-white py-3">
+        <nav>
+            <ul class="pagination justify-content-center mb-0">
+                {% if clientes.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ clientes.previous_page_number }}{% if q %}&q={{ q }}{% endif %}">Anterior</a></li>
+                {% endif %}
+                <li class="page-item active"><span class="page-link">{{ clientes.number }} de {{ clientes.paginator.num_pages }}</span></li>
+                {% if clientes.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ clientes.next_page_number }}{% if q %}&q={{ q }}{% endif %}">Siguiente</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

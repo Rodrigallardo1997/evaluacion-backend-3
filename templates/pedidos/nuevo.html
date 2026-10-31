@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Nuevo Pedido Personalizado — Dulce Arte{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h3 mb-0 text-dulce-cafe fw-bold">
+                    <i class="bi bi-cart-plus me-2"></i>Nuevo Pedido Personalizado
+                </h1>
+                <p class="text-muted small mb-0">Registro y cotización paso a paso para pastelería artesanal.</p>
+            </div>
+            <a href="{% url 'pedidos:index' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Volver
+            </a>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" id="formNuevoPedido" novalidate>
+            {% csrf_token %}
+
+            <!-- PASO 1: DATOS DEL CLIENTE Y ENTREGA -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-0 py-3 d-flex align-items-center">
+                    <span class="badge bg-dulce-cafe text-white rounded-circle p-2 me-2">1</span>
+                    <h5 class="mb-0 fw-bold text-dulce-cafe">Cliente y Entrega</h5>
+                </div>
+                <div class="card-body p-4 pt-0">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Cliente *</label>
+                            {{ form.cliente }}
+                            {% if form.cliente.errors %}<div class="text-danger small">{{ form.cliente.errors }}</div>{% endif %}
+                            <div class="form-text">
+                                ¿No está en la lista? <a href="{% url 'pedidos:cliente_nuevo' %}" target="_blank">Registrar nuevo cliente</a>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Prioridad</label>
+                            {{ form.prioridad }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Fecha y Hora de Entrega *</label>
+                            {{ form.fecha_entrega }}
+                            {% if form.fecha_entrega.errors %}<div class="text-danger small">{{ form.fecha_entrega.errors }}</div>{% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Dirección de Entrega *</label>
+                        {{ form.direccion_entrega }}
+                        {% if form.direccion_entrega.errors %}<div class="text-danger small">{{ form.direccion_entrega.errors }}</div>{% endif %}
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold">Descripción del Diseño / Temática *</label>
+                            {{ form.diseno_descripcion }}
+                            {% if form.diseno_descripcion.errors %}<div class="text-danger small">{{ form.diseno_descripcion.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Foto de Referencia (Opcional)</label>
+                            {{ form.imagen_referencia }}
+                            <div class="form-text">Diseño o dedicatoria deseada por el cliente.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PASO 2: PRODUCTOS Y PERSONALIZACIÓN -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <span class="badge bg-dulce-cafe text-white rounded-circle p-2 me-2">2</span>
+                        <h5 class="mb-0 fw-bold text-dulce-cafe">Productos y Recetas Solicitadas</h5>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-success" id="btnAgregarReceta">
+                        <i class="bi bi-plus-lg me-1"></i>Agregar Producto
+                    </button>
+                </div>
+                <div class="card-body p-4 pt-0">
+                    <div class="table-responsive">
+                        <table class="table align-middle" id="tablaDetalles">
+                            <thead class="table-light small text-uppercase">
+                                <tr>
+                                    <th style="width: 35%;">Receta / Producto *</th>
+                                    <th style="width: 15%;">Cantidad *</th>
+                                    <th style="width: 20%;">Precio Unitario ($)</th>
+                                    <th style="width: 25%;">Personalización (Opcional)</th>
+                                    <th style="width: 5%;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="detallesContainer">
+                                <!-- Primera fila predeterminada -->
+                                <tr class="fila-detalle">
+                                    <td>
+                                        <select name="receta_id[]" class="form-select select-receta" required>
+                                            <option value="">Seleccione una receta...</option>
+                                            {% for r in recetas %}
+                                            <option value="{{ r.id }}" data-precio="{{ r.precio_base }}">{{ r.nombre }} (${{ r.precio_base|floatformat:0 }})</option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="number" name="cantidad[]" class="form-control input-cantidad" value="1" min="1" required>
+                                    </td>
+                                    <td>
+                                        <input type="number" name="precio_unitario[]" class="form-control input-precio" step="100" value="0">
+                                    </td>
+                                    <td>
+                                        <input type="text" name="personalizacion[]" class="form-control" placeholder="Ej: Sin nueces, relleno extra manjar">
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-fila">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PASO 3: TOTALES Y CONDICIONES -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-0 py-3 d-flex align-items-center">
+                    <span class="badge bg-dulce-cafe text-white rounded-circle p-2 me-2">3</span>
+                    <h5 class="mb-0 fw-bold text-dulce-cafe">Totales y Descuento</h5>
+                </div>
+                <div class="card-body p-4 pt-0">
+                    <div class="row justify-content-end">
+                        <div class="col-md-5">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="fw-semibold">Subtotal:</span>
+                                <span class="fs-5" id="lblSubtotal">$0</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-semibold">Descuento ($):</span>
+                                <div style="width: 140px;">
+                                    {{ form.descuento }}
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="fw-bold fs-5 text-dulce-cafe">Total Final:</span>
+                                <span class="fw-bold fs-4 text-success" id="lblTotal">$0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Observaciones Generales</label>
+                        {{ form.observaciones }}
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <a href="{% url 'pedidos:index' %}" class="btn btn-outline-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-dulce px-5 py-2 fw-bold">
+                            <i class="bi bi-check2-circle me-1"></i>Guardar como Borrador
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const container = document.getElementById("detallesContainer");
+        const btnAgregar = document.getElementById("btnAgregarReceta");
+        const inputDescuento = document.getElementById("id_descuento");
+        const lblSubtotal = document.getElementById("lblSubtotal");
+        const lblTotal = document.getElementById("lblTotal");
+
+        function calcularTotales() {
+            let subtotal = 0;
+            const filas = container.querySelectorAll(".fila-detalle");
+            filas.forEach(fila => {
+                const cant = parseFloat(fila.querySelector(".input-cantidad").value) || 0;
+                const precio = parseFloat(fila.querySelector(".input-precio").value) || 0;
+                subtotal += (cant * precio);
+            });
+
+            const descuento = parseFloat(inputDescuento.value) || 0;
+            const total = Math.max(subtotal - descuento, 0);
+
+            lblSubtotal.textContent = "$" + Math.round(subtotal).toLocaleString("es-CL");
+            lblTotal.textContent = "$" + Math.round(total).toLocaleString("es-CL");
+        }
+
+        // Agregar fila
+        btnAgregar.addEventListener("click", function () {
+            const primeraFila = container.querySelector(".fila-detalle");
+            const nuevaFila = primeraFila.cloneNode(true);
+            nuevaFila.querySelector(".select-receta").value = "";
+            nuevaFila.querySelector(".input-cantidad").value = "1";
+            nuevaFila.querySelector(".input-precio").value = "0";
+            nuevaFila.querySelector("input[name='personalizacion[]']").value = "";
+            container.appendChild(nuevaFila);
+            vincularEventosFila(nuevaFila);
+            calcularTotales();
+        });
+
+        function vincularEventosFila(fila) {
+            const selectReceta = fila.querySelector(".select-receta");
+            const inputCantidad = fila.querySelector(".input-cantidad");
+            const inputPrecio = fila.querySelector(".input-precio");
+            const btnEliminar = fila.querySelector(".btn-eliminar-fila");
+
+            selectReceta.addEventListener("change", function () {
+                const opt = selectReceta.options[selectReceta.selectedIndex];
+                const precio = opt.getAttribute("data-precio") || 0;
+                inputPrecio.value = Math.round(parseFloat(precio));
+                calcularTotales();
+            });
+
+            inputCantidad.addEventListener("input", calcularTotales);
+            inputPrecio.addEventListener("input", calcularTotales);
+
+            btnEliminar.addEventListener("click", function () {
+                if (container.querySelectorAll(".fila-detalle").length > 1) {
+                    fila.remove();
+                    calcularTotales();
+                } else {
+                    alert("El pedido debe contener al menos un producto.");
+                }
+            });
+        }
+
+        // Vincular fila inicial
+        container.querySelectorAll(".fila-detalle").forEach(vincularEventosFila);
+        inputDescuento.addEventListener("input", calcularTotales);
+        calcularTotales();
+    });
+</script>
+{% endblock %}

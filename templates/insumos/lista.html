@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+
+{% block title %}Inventario de Insumos — Dulce Arte{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-0 text-dulce-cafe fw-bold">
+            <i class="bi bi-boxes me-2"></i>Bodega e Insumos
+        </h1>
+        <p class="text-muted small mb-0">Control de stock, materias primas perecibles y valorización de inventario.</p>
+    </div>
+    {% if user.es_admin or user.es_cocina %}
+    <a href="{% url 'catalogo:insumo_nuevo' %}" class="btn btn-dulce shadow-sm">
+        <i class="bi bi-plus-circle me-1"></i>Nuevo Insumo
+    </a>
+    {% endif %}
+</div>
+
+<!-- Filtros -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-5">
+                <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Buscar insumo por nombre...">
+            </div>
+            <div class="col-md-3">
+                <select name="categoria" class="form-select">
+                    <option value="">Todas las categorías</option>
+                    {% for c_val, c_lbl in categorias %}
+                    <option value="{{ c_val }}" {% if categoria_actual == c_val %}selected{% endif %}>{{ c_lbl }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <div class="form-check pt-2">
+                    <input class="form-check-input" type="checkbox" name="stock_bajo" value="true" id="checkStockBajo" {% if stock_bajo %}checked{% endif %}>
+                    <label class="form-check-label small fw-semibold text-danger" for="checkStockBajo">
+                        Solo Stock Bajo
+                    </label>
+                </div>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-dulce flex-grow-1">Filtrar</button>
+                <a href="{% url 'catalogo:insumos' %}" class="btn btn-outline-secondary">Limpiar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tabla de Insumos -->
+<div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light text-muted small text-uppercase">
+                <tr>
+                    <th>Insumo</th>
+                    <th>Categoría</th>
+                    <th>Stock Actual</th>
+                    <th>Stock Mínimo</th>
+                    <th>Costo Unitario</th>
+                    <th>Valor Total</th>
+                    <th>Vencimiento</th>
+                    {% if user.es_admin or user.es_cocina %}
+                    <th class="text-end">Acciones</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for ins in insumos %}
+                <tr>
+                    <td class="fw-bold text-dark">{{ ins.nombre }}</td>
+                    <td><span class="badge bg-light text-dark border">{{ ins.get_categoria_display }}</span></td>
+                    <td>
+                        {% if ins.stock_bajo %}
+                        <span class="badge bg-danger fs-6 px-2 py-1">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ ins.stock_actual }} {{ ins.unidad }}
+                        </span>
+                        {% else %}
+                        <span class="fw-semibold text-dark">{{ ins.stock_actual }} {{ ins.unidad }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-muted">{{ ins.stock_minimo }} {{ ins.unidad }}</td>
+                    <td>${{ ins.costo_unitario|floatformat:2 }}</td>
+                    <td class="fw-bold text-dark">${{ ins.valor_inventario|floatformat:2 }}</td>
+                    <td>
+                        {% if ins.perecedero %}
+                            {% if ins.esta_vencido %}
+                                <span class="badge bg-danger">Vencido ({{ ins.fecha_vencimiento|date:"d-m-Y" }})</span>
+                            {% else %}
+                                <span class="small text-muted">{{ ins.fecha_vencimiento|date:"d-m-Y" }}</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="text-muted small">No perecible</span>
+                        {% endif %}
+                    </td>
+                    {% if user.es_admin or user.es_cocina %}
+                    <td class="text-end">
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'catalogo:insumo_ajustar' ins.id %}" class="btn btn-outline-success" title="Ajuste de Stock">
+                                <i class="bi bi-arrow-left-right me-1"></i>Ajustar
+                            </a>
+                            <a href="{% url 'catalogo:insumo_editar' ins.id %}" class="btn btn-outline-secondary" title="Editar Insumo">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                        </div>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center py-4 text-muted">
+                        No se encontraron insumos registrados.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if insumos.has_other_pages %}
+    <div class="card-footer bg-white py-3">
+        <nav>
+            <ul class="pagination justify-content-center mb-0">
+                {% if insumos.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ insumos.previous_page_number }}{% if q %}&q={{ q }}{% endif %}">Anterior</a></li>
+                {% endif %}
+                <li class="page-item active"><span class="page-link">{{ insumos.number }} de {{ insumos.paginator.num_pages }}</span></li>
+                {% if insumos.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ insumos.next_page_number }}{% if q %}&q={{ q }}{% endif %}">Siguiente</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

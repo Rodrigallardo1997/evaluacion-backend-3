@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ titulo }} — Dulce Arte{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="mb-0 fw-bold text-dulce-cafe">
+                    <i class="bi bi-box-seam me-2 text-dulce-rosa"></i>{{ titulo }}
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Nombre del Insumo *</label>
+                            {{ form.nombre }}
+                            {% if form.nombre.errors %}<div class="text-danger small">{{ form.nombre.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Categoría *</label>
+                            {{ form.categoria }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Unidad *</label>
+                            {{ form.unidad }}
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Stock Actual *</label>
+                            {{ form.stock_actual }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Stock Mínimo (Alerta) *</label>
+                            {{ form.stock_minimo }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Costo Unitario ($ CLP) *</label>
+                            {{ form.costo_unitario }}
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3 p-3 bg-light rounded border">
+                        <div class="col-md-6">
+                            <div class="form-check pt-2">
+                                {{ form.perecedero }}
+                                <label class="form-check-label fw-semibold" for="checkPerecedero">
+                                    Insumo Perecedero
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Fecha de Vencimiento</label>
+                            {{ form.fecha_vencimiento }}
+                        </div>
+                    </div>
+
+                    <div class="form-check mb-4">
+                        {{ form.activo }}
+                        <label class="form-check-label fw-semibold" for="{{ form.activo.id_for_label }}">
+                            Insumo Activo para Recetas
+                        </label>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% url 'catalogo:insumos' %}" class="btn btn-outline-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-dulce px-4">Guardar Insumo</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

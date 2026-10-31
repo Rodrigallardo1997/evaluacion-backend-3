@@ -1,0 +1,343 @@
+/* =============================================================================
+   Dulce Arte — estilos.css
+   Paleta de colores propia, componentes UI y utilidades
+   ============================================================================= */
+
+/* ---------------------------------------------------------------------------
+   Variables CSS — Paleta Dulce Arte
+--------------------------------------------------------------------------- */
+:root {
+    --dulce-rosa:        #F4A7B9;
+    --dulce-rosa-dark:   #e8809a;
+    --dulce-crema:       #FFF8F0;
+    --dulce-cafe:        #6B4226;
+    --dulce-cafe-dark:   #4e2f19;
+    --dulce-cafe-light:  #8B5A2B;
+    --dulce-dorado:      #D4AF37;
+    --dulce-dorado-dark: #b8961e;
+
+    /* Alias Bootstrap-friendly */
+    --bs-body-bg:        var(--dulce-crema);
+}
+
+/* ---------------------------------------------------------------------------
+   Base
+--------------------------------------------------------------------------- */
+body {
+    background-color: var(--dulce-crema);
+    color: #333;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+}
+
+/* ---------------------------------------------------------------------------
+   Navbar
+--------------------------------------------------------------------------- */
+.navbar.bg-dulce-cafe {
+    background-color: var(--dulce-cafe) !important;
+}
+
+.navbar .navbar-brand {
+    font-size: 1.3rem;
+    letter-spacing: 0.02em;
+}
+
+.navbar .nav-link {
+    color: rgba(255,255,255,0.85) !important;
+    font-size: 0.9rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    transition: background 0.15s, color 0.15s;
+}
+
+.navbar .nav-link:hover,
+.navbar .nav-link.active {
+    background-color: rgba(255,255,255,0.12);
+    color: #fff !important;
+}
+
+.text-dulce-rosa { color: var(--dulce-rosa) !important; }
+.text-dulce-cafe { color: var(--dulce-cafe) !important; }
+.text-dulce-dorado { color: var(--dulce-dorado) !important; }
+
+.bg-dulce-cafe   { background-color: var(--dulce-cafe) !important; }
+.bg-dulce-rosa   { background-color: var(--dulce-rosa) !important; }
+.bg-dulce-crema  { background-color: var(--dulce-crema) !important; }
+.bg-dulce-dorado { background-color: var(--dulce-dorado) !important; }
+
+/* ---------------------------------------------------------------------------
+   Cards de pedidos
+--------------------------------------------------------------------------- */
+.card-pedido {
+    border: none;
+    border-radius: 1rem;
+    box-shadow: 0 2px 12px rgba(107, 66, 38, 0.08);
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.card-pedido:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(107, 66, 38, 0.15);
+}
+
+.card-pedido .card-header {
+    background-color: var(--dulce-crema);
+    border-bottom: 2px solid var(--dulce-rosa);
+    border-radius: 1rem 1rem 0 0;
+    font-weight: 600;
+    color: var(--dulce-cafe);
+}
+
+/* ---------------------------------------------------------------------------
+   Badges de estado de pedido
+--------------------------------------------------------------------------- */
+.badge-estado {
+    font-size: 0.75rem;
+    padding: 0.4em 0.75em;
+    border-radius: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.badge-pendiente    { background-color: #FFF3CD; color: #856404; }
+.badge-produccion   { background-color: #CCE5FF; color: #004085; }
+.badge-listo        { background-color: #D4EDDA; color: #155724; }
+.badge-en-ruta      { background-color: #D1ECF1; color: #0C5460; }
+.badge-entregado    { background-color: #D4EDDA; color: #155724; }
+.badge-cancelado    { background-color: #F8D7DA; color: #721C24; }
+.badge-rechazado    { background-color: #F8D7DA; color: #721C24; }
+
+/* ---------------------------------------------------------------------------
+   Kanban Board
+--------------------------------------------------------------------------- */
+.kanban-board {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    padding-bottom: 1rem;
+    align-items: flex-start;
+    min-height: 70vh;
+}
+
+.kanban-columna {
+    flex: 0 0 280px;
+    background-color: #f4f4f8;
+    border-radius: 1rem;
+    padding: 0.75rem;
+    min-height: 300px;
+}
+
+.kanban-columna-header {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.6rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.kanban-col-pendiente   .kanban-columna-header { background-color: #FFF3CD; color: #856404; }
+.kanban-col-produccion  .kanban-columna-header { background-color: #CCE5FF; color: #004085; }
+.kanban-col-listo       .kanban-columna-header { background-color: #D4EDDA; color: #155724; }
+.kanban-col-ruta        .kanban-columna-header { background-color: #D1ECF1; color: #0C5460; }
+.kanban-col-entregado   .kanban-columna-header { background-color: #D4EDDA; color: #155724; }
+
+.kanban-tarjeta {
+    background: white;
+    border-radius: 0.75rem;
+    padding: 0.75rem;
+    margin-bottom: 0.6rem;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.07);
+    cursor: grab;
+    border-left: 4px solid var(--dulce-rosa);
+    transition: box-shadow 0.15s;
+}
+
+.kanban-tarjeta:active {
+    cursor: grabbing;
+}
+
+.kanban-tarjeta:hover {
+    box-shadow: 0 4px 16px rgba(107,66,38,0.12);
+}
+
+.kanban-tarjeta .pedido-numero {
+    font-size: 0.7rem;
+    color: #888;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.kanban-tarjeta .pedido-cliente {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--dulce-cafe);
+    margin-bottom: 0.2rem;
+}
+
+.kanban-tarjeta .pedido-fecha {
+    font-size: 0.78rem;
+    color: #666;
+}
+
+.kanban-tarjeta .pedido-monto {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--dulce-dorado-dark);
+}
+
+.kanban-tarjeta.sortable-ghost {
+    opacity: 0.4;
+    background: var(--dulce-crema);
+    border: 2px dashed var(--dulce-rosa);
+}
+
+.kanban-tarjeta.sortable-drag {
+    box-shadow: 0 8px 30px rgba(107,66,38,0.2);
+    transform: rotate(1.5deg);
+}
+
+/* ---------------------------------------------------------------------------
+   Footer
+--------------------------------------------------------------------------- */
+.footer {
+    margin-top: auto;
+}
+
+/* ---------------------------------------------------------------------------
+   Utilidades — Fechas chilenas y montos CLP
+--------------------------------------------------------------------------- */
+.fecha-chile {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.monto-clp {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+}
+
+.monto-clp::before {
+    content: '$';
+    margin-right: 1px;
+    font-size: 0.85em;
+    vertical-align: 0.05em;
+}
+
+/* ---------------------------------------------------------------------------
+   Formularios
+--------------------------------------------------------------------------- */
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--dulce-rosa);
+    box-shadow: 0 0 0 0.25rem rgba(244, 167, 185, 0.25);
+}
+
+.btn-primary {
+    background-color: var(--dulce-cafe);
+    border-color: var(--dulce-cafe);
+}
+
+.btn-primary:hover {
+    background-color: var(--dulce-cafe-dark);
+    border-color: var(--dulce-cafe-dark);
+}
+
+.btn-primary:focus {
+    background-color: var(--dulce-cafe-dark);
+    border-color: var(--dulce-cafe-dark);
+    box-shadow: 0 0 0 0.25rem rgba(107, 66, 38, 0.35);
+}
+
+/* ---------------------------------------------------------------------------
+   Sidebar (opcional, para pantallas grandes)
+--------------------------------------------------------------------------- */
+.sidebar {
+    width: 240px;
+    min-height: calc(100vh - 56px);
+    background-color: #fff;
+    border-right: 1px solid #e9ecef;
+    padding: 1rem 0;
+}
+
+.sidebar .nav-link {
+    color: var(--dulce-cafe);
+    padding: 0.6rem 1.25rem;
+    border-radius: 0;
+    font-size: 0.9rem;
+    border-left: 3px solid transparent;
+    transition: all 0.15s;
+}
+
+.sidebar .nav-link:hover,
+.sidebar .nav-link.active {
+    background-color: var(--dulce-crema);
+    border-left-color: var(--dulce-rosa);
+    color: var(--dulce-cafe);
+    font-weight: 600;
+}
+
+/* ---------------------------------------------------------------------------
+   Responsive utilities
+--------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+    .kanban-board {
+        flex-direction: column;
+        overflow-x: unset;
+    }
+    .kanban-columna {
+        flex: 1 1 100%;
+        width: 100%;
+    }
+}
+
+/* ---------------------------------------------------------------------------
+   Print — Cotizaciones
+--------------------------------------------------------------------------- */
+@media print {
+    .navbar,
+    .footer,
+    .btn,
+    .alert,
+    .no-print {
+        display: none !important;
+    }
+
+    body {
+        background: white;
+        font-size: 11pt;
+    }
+
+    .card {
+        box-shadow: none !important;
+        border: 1px solid #ccc !important;
+    }
+
+    .cotizacion-header {
+        border-bottom: 2px solid var(--dulce-cafe);
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+    }
+
+    .cotizacion-total {
+        font-size: 1.2em;
+        font-weight: bold;
+    }
+
+    a[href]:after {
+        content: none !important;
+    }
+
+    @page {
+        margin: 2cm;
+        size: A4;
+    }
+}

@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block title %}Mis Rutas de Despacho — Dulce Arte{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h1 class="h3 mb-0 text-dulce-cafe fw-bold">
+        <i class="bi bi-map me-2"></i>Mis Rutas de Despacho
+    </h1>
+    <p class="text-muted small mb-0">Rutas asignadas a tu usuario para entrega en terreno.</p>
+</div>
+
+<div class="row g-4">
+    {% for r in rutas %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                <span class="fw-bold text-dulce-cafe fs-5">{{ r.codigo|default:r.id }}</span>
+                {% if r.estado == 'PLANIFICADA' %}
+                    <span class="badge bg-info text-dark">Planificada</span>
+                {% elif r.estado == 'EN_RUTA' %}
+                    <span class="badge bg-primary">En Ruta</span>
+                {% elif r.estado == 'COMPLETADA' %}
+                    <span class="badge bg-success">Completada</span>
+                {% endif %}
+            </div>
+            <div class="card-body pt-0">
+                <div class="small text-muted mb-2">
+                    <i class="bi bi-calendar3 me-1"></i>Fecha: <strong>{{ r.fecha|date:"d-m-Y" }}</strong>
+                </div>
+                <div class="small text-muted mb-3">
+                    <i class="bi bi-truck me-1"></i>Vehículo: {{ r.vehiculo|default:"Sin vehículo especificado" }}
+                </div>
+
+                <div class="bg-light p-3 rounded mb-3">
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span>Total Paradas:</span>
+                        <strong>{{ r.total_paradas }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span>Entregadas:</span>
+                        <strong class="text-success">{{ r.entregadas }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between small">
+                        <span>Pendientes:</span>
+                        <strong class="text-warning">{{ r.pendientes }}</strong>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    {% if r.estado == 'PLANIFICADA' %}
+                    <form method="post" action="{% url 'despachos:iniciar_ruta' r.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="bi bi-play-circle-fill me-1"></i>Iniciar Ruta
+                        </button>
+                    </form>
+                    {% endif %}
+                    <a href="{% url 'despachos:detalle' r.id %}" class="btn btn-outline-secondary w-100">
+                        Ver Itinerario y Paradas
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center py-5 text-muted">
+        <i class="bi bi-truck fs-1 d-block mb-3"></i>
+        No tienes rutas de despacho asignadas actualmente.
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

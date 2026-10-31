@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+
+{% block title %}Pedidos — Dulce Arte{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-0 text-dulce-cafe fw-bold">
+            <i class="bi bi-bag-check me-2"></i>Gestión de Pedidos
+        </h1>
+        <p class="text-muted small mb-0">Control del ciclo de vida: cotización, cocina, inventario y despacho.</p>
+    </div>
+    {% if user.es_admin or user.es_vendedor %}
+    <a href="{% url 'pedidos:nuevo' %}" class="btn btn-dulce shadow-sm">
+        <i class="bi bi-plus-circle me-1"></i>Nuevo Pedido Personalizado
+    </a>
+    {% endif %}
+</div>
+
+<!-- Filtros de búsqueda -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small text-muted">Búsqueda</label>
+                <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Buscar por código o cliente...">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small text-muted">Estado</label>
+                <select name="estado" class="form-select">
+                    <option value="">Todos los estados</option>
+                    {% for est_val, est_label in estados %}
+                    <option value="{{ est_val }}" {% if estado_actual == est_val %}selected{% endif %}>{{ est_label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small text-muted">Prioridad</label>
+                <select name="prioridad" class="form-select">
+                    <option value="">Todas las prioridades</option>
+                    {% for pri_val, pri_label in prioridades %}
+                    <option value="{{ pri_val }}" {% if prioridad_actual == pri_val %}selected{% endif %}>{{ pri_label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-dulce flex-grow-1">Filtrar</button>
+                <a href="{% url 'pedidos:index' %}" class="btn btn-outline-secondary">Limpiar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Listado de pedidos -->
+<div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light text-muted small text-uppercase">
+                <tr>
+                    <th>Código</th>
+                    <th>Cliente</th>
+                    <th>Entrega</th>
+                    <th>Prioridad</th>
+                    <th>Estado</th>
+                    <th>Total</th>
+                    <th>Anticipo</th>
+                    <th>Saldo</th>
+                    <th>Stock BOM</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in pedidos %}
+                <tr>
+                    <td class="fw-bold text-dulce-cafe">
+                        <a href="{% url 'pedidos:detalle' p.id %}" class="text-decoration-none fw-bold text-dulce-cafe">
+                            {{ p.codigo|default:p.id }}
+                        </a>
+                    </td>
+                    <td>
+                        <div class="fw-semibold">{{ p.cliente.nombre_completo }}</div>
+                        <div class="small text-muted">{{ p.cliente.telefono }}</div>
+                    </td>
+                    <td>
+                        <div>{{ p.fecha_entrega|date:"d-m-Y" }}</div>
+                        <div class="small text-muted">{{ p.fecha_entrega|date:"H:i" }} hrs</div>
+                    </td>
+                    <td>
+                        {% if p.prioridad == 'URGENTE' %}
+                            <span class="badge bg-danger">Urgente</span>
+                        {% elif p.prioridad == 'ALTA' %}
+                            <span class="badge bg-warning text-dark">Alta</span>
+                        {% elif p.prioridad == 'MEDIA' %}
+                            <span class="badge bg-primary">Media</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Baja</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge badge-estado-{{ p.estado|lower }} px-2 py-1">
+                            {{ p.get_estado_display }}
+                        </span>
+                    </td>
+                    <td class="fw-bold">${{ p.total|floatformat:0 }}</td>
+                    <td class="text-muted">${{ p.anticipo|floatformat:0 }}</td>
+                    <td>
+                        {% if p.saldo > 0 %}
+                            <span class="text-danger fw-bold">${{ p.saldo|floatformat:0 }}</span>
+                        {% else %}
+                            <span class="text-success fw-bold">Saldado</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if p.inventario_descontado %}
+                            <span class="badge bg-success bg-opacity-25 text-success">✓ Descontado</span>
+                        {% else %}
+                            <span class="text-muted small">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <a href="{% url 'pedidos:detalle' p.id %}" class="btn btn-sm btn-outline-secondary" title="Ver detalle">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="10" class="text-center py-5 text-muted">
+                        <i class="bi bi-inbox fs-2 d-block mb-2 text-muted"></i>
+                        No se encontraron pedidos con los filtros aplicados.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if pedidos.has_other_pages %}
+    <div class="card-footer bg-white py-3">
+        <nav>
+            <ul class="pagination justify-content-center mb-0">
+                {% if pedidos.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ pedidos.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if estado_actual %}&estado={{ estado_actual }}{% endif %}">Anterior</a></li>
+                {% endif %}
+                <li class="page-item active"><span class="page-link">{{ pedidos.number }} de {{ pedidos.paginator.num_pages }}</span></li>
+                {% if pedidos.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ pedidos.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if estado_actual %}&estado={{ estado_actual }}{% endif %}">Siguiente</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Acceso Denegado (403) — Dulce Arte{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-5">
+    <div class="col-md-7 col-lg-6 text-center">
+        <div class="card shadow-sm border-0 rounded-4 p-4 p-md-5">
+            <div class="mb-4">
+                <span class="badge bg-danger-subtle text-danger p-3 rounded-circle fs-1">
+                    <i class="bi bi-shield-lock-fill"></i>
+                </span>
+            </div>
+            <h2 class="fw-bold text-dulce-cafe mb-2">Acceso No Autorizado (403)</h2>
+            <p class="text-muted mb-4">
+                Tu rol actual (<strong>{{ request.user.get_rol_display|default:"Sin rol asignado" }}</strong>) 
+                no tiene los permisos requeridos para acceder a esta sección.
+            </p>
+            <div class="alert alert-light border text-start small mb-4">
+                <i class="bi bi-info-circle text-primary me-2"></i>
+                <strong>Matriz de Acceso del Sistema:</strong>
+                <ul class="mb-0 mt-2 ps-3 text-muted">
+                    <li><strong>Administrador / Vendedor:</strong> Acceso completo a cotizaciones, clientes y pedidos.</li>
+                    <li><strong>Cocina:</strong> Acceso al Tablero Kanban de producción, inventario y recetas.</li>
+                    <li><strong>Repartidor:</strong> Acceso a Rutas de Despacho y Registro de Entregas.</li>
+                    <li><strong>Cliente:</strong> Portal personal de seguimiento de pedidos propios.</li>
+                </ul>
+            </div>
+            <div class="d-flex justify-content-center gap-2">
+                <a href="javascript:history.back()" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Volver atrás
+                </a>
+                <a href="{% url 'dashboard:index' %}" class="btn btn-dulce-rosa text-white">
+                    <i class="bi bi-house-door me-1"></i> Ir al Inicio
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

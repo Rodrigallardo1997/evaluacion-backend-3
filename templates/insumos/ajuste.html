@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}Ajuste de Stock — {{ insumo.nombre }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="mb-0 fw-bold text-dulce-cafe">
+                    <i class="bi bi-arrow-left-right me-2 text-dulce-rosa"></i>Ajuste de Stock: {{ insumo.nombre }}
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="alert alert-info py-2 px-3 small mb-4">
+                    <strong>Stock Actual en Bodega:</strong> {{ insumo.stock_actual }} {{ insumo.unidad }} |
+                    <strong>Costo:</strong> ${{ insumo.costo_unitario }}/{{ insumo.unidad }}
+                </div>
+
+                <form method="post" novalidate>
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Tipo de Movimiento *</label>
+                        {{ form.tipo }}
+                        <div class="form-text">
+                            <strong>Entrada:</strong> compra o recepción. <strong>Salida:</strong> uso manual o retiro.
+                            <strong>Merma:</strong> pérdida o desperdicio. <strong>Ajuste:</strong> corrección de inventario físico.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Cantidad ({{ insumo.unidad }}) *</label>
+                        {{ form.cantidad }}
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Motivo / Justificación *</label>
+                        {{ form.motivo }}
+                        <div class="form-text">Quedará registrado de forma inmutable en la auditoría de inventario.</div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% url 'catalogo:insumos' %}" class="btn btn-outline-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-success px-4 fw-bold">Registrar Movimiento</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

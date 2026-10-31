@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Confirmar Entrega — Parada #{{ despacho.orden }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .canvas-container {
+        border: 2px dashed #6B4226;
+        border-radius: 8px;
+        background-color: #fff;
+        touch-action: none;
+        position: relative;
+    }
+    #signature-pad {
+        width: 100%;
+        height: 200px;
+        display: block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h3 mb-0 text-dulce-cafe fw-bold">
+                    <i class="bi bi-patch-check me-2"></i>Confirmar Entrega
+                </h1>
+                <p class="text-muted small mb-0">Ruta {{ despacho.ruta.codigo }} · Parada #{{ despacho.orden }}</p>
+            </div>
+            <a href="{% url 'despachos:mis_rutas' %}" class="btn btn-outline-secondary">Volver</a>
+        </div>
+
+        <!-- Ficha Resumen del Pedido -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-3">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <span class="text-muted small text-uppercase fw-semibold d-block">Pedido y Cliente</span>
+                        <strong class="fs-6 text-dark">{{ despacho.pedido.codigo }}</strong>
+                        <div class="fw-semibold text-dark">{{ despacho.pedido.cliente.nombre_completo }}</div>
+                        <div class="small text-muted"><i class="bi bi-telephone me-1"></i>{{ despacho.pedido.cliente.telefono }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <span class="text-muted small text-uppercase fw-semibold d-block">Destino y Cobro</span>
+                        <div class="small text-dark mb-1"><i class="bi bi-geo-alt me-1 text-danger"></i>{{ despacho.pedido.direccion_entrega }}</div>
+                        <div class="d-flex justify-content-between align-items-center bg-light p-2 rounded small">
+                            <span>Saldo a recaudar:</span>
+                            {% if despacho.pedido.saldo > 0 %}
+                                <strong class="text-danger fs-6">${{ despacho.pedido.saldo|floatformat:0 }}</strong>
+                            {% else %}
+                                <strong class="text-success fs-6">Pagado ✓</strong>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulario de Confirmación con Firma y Foto -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="mb-0 fw-bold text-dulce-cafe">Evidencia de Recepción y Conformidad</h5>
+            </div>
+            <div class="card-body p-4 pt-0">
+                <form method="post" enctype="multipart/form-data" id="formConfirmarEntrega" novalidate>
+                    {% csrf_token %}
+                    {{ form.firma_digital }}
+                    {{ form.latitud }}
+                    {{ form.longitud }}
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nombre de Quien Recibe *</label>
+                        {{ form.receptor_nombre }}
+                    </div>
+
+                    <!-- Canvas Firma Digital -->
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label fw-semibold mb-0">Firma Digital del Receptor</label>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="btnLimpiarFirma">
+                                <i class="bi bi-eraser me-1"></i>Limpiar Firma
+                            </button>
+                        </div>
+                        <div class="canvas-container shadow-sm">
+                            <canvas id="signature-pad"></canvas>
+                        </div>
+                        <div class="form-text">Dibuje la firma con el dedo o mouse en el recuadro blanco.</div>
+                    </div>
+
+                    <!-- Foto Comprobante -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Fotografía del Comprobante / Pastel Entregado (Opcional)</label>
+                        {{ form.foto_comprobante }}
+                        <div class="form-text">Adjunte una foto de respaldo si el receptor no puede firmar en pantalla.</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Observaciones de la Entrega</label>
+                        {{ form.observaciones }}
+                    </div>
+
+                    <!-- Botones de Acción -->
+                    <div class="d-flex justify-content-between gap-2 pt-2">
+                        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalFallido">
+                            <i class="bi bi-x-circle me-1"></i>Marcar Entrega Fallida
+                        </button>
+                        <button type="submit" class="btn btn-success px-4 py-2 fw-bold" id="btnConfirmarEntrega">
+                            <i class="bi bi-check-circle-fill me-1"></i>Confirmar Entrega
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Entrega Fallida -->
+<div class="modal fade" id="modalFallido" tabindex="-1">
+    <div class="modal-dialog">
+        <form method="post" action="{% url 'despachos:entrega_fallida' despacho.id %}" class="modal-content">
+            {% csrf_token %}
+            <div class="modal-header">
+                <h5 class="modal-title text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Registrar Entrega Fallida</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>El pedido <strong>{{ despacho.pedido.codigo }}</strong> volverá automáticamente a estado <strong>LISTO</strong> para que pueda ser reprogramado en una nueva ruta.</p>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Motivo del Fallo *</label>
+                    <textarea name="motivo" class="form-control" rows="3" required placeholder="Ej: No responde morador, dirección inaccesible..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="submit" class="btn btn-danger">Confirmar Fallo y Reprogramar</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Signature Pad CDN -->
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const canvas = document.getElementById("signature-pad");
+        const firmaInput = document.getElementById("firma_digital_input");
+        const btnLimpiar = document.getElementById("btnLimpiarFirma");
+        const form = document.getElementById("formConfirmarEntrega");
+        const latInput = document.getElementById("latitud_input");
+        const lngInput = document.getElementById("longitud_input");
+        const fotoInput = document.getElementById("foto_comprobante_input");
+
+        // Ajustar resolución del canvas
+        function resizeCanvas() {
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            canvas.width = canvas.offsetWidth * ratio;
+            canvas.height = canvas.offsetHeight * ratio;
+            canvas.getContext("2d").scale(ratio, ratio);
+        }
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas();
+
+        const signaturePad = new SignaturePad(canvas, {
+            backgroundColor: "rgb(255, 255, 255)",
+            penColor: "rgb(20, 20, 20)"
+        });
+
+        btnLimpiar.addEventListener("click", function () {
+            signaturePad.clear();
+            firmaInput.value = "";
+        });
+
+        // Capturar geolocalización si está disponible
+        if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                function (pos) {
+                    latInput.value = pos.coords.latitude.toFixed(6);
+                    lngInput.value = pos.coords.longitude.toFixed(6);
+                },
+                function (err) {
+                    console.log("GPS no disponible o denegado.");
+                },
+                { timeout: 5000 }
+            );
+        }
+
+        form.addEventListener("submit", function (e) {
+            const tieneFirma = !signaturePad.isEmpty();
+            const tieneFoto = fotoInput.files && fotoInput.files.length > 0;
+
+            if (!tieneFirma && !tieneFoto) {
+                e.preventDefault();
+                alert("Debe proporcionar al menos una evidencia de entrega: firmar en pantalla o adjuntar una foto del comprobante.");
+                return false;
+            }
+
+            if (tieneFirma) {
+                const dataURL = signaturePad.toDataURL("image/png");
+                firmaInput.value = dataURL;
+            }
+        });
+    });
+</script>
+{% endblock %}

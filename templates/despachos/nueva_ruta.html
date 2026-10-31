@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block title %}Nueva Ruta de Despacho — Dulce Arte{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h3 mb-0 text-dulce-cafe fw-bold">
+                    <i class="bi bi-map me-2"></i>Planificar Ruta de Despacho
+                </h1>
+                <p class="text-muted small mb-0">Asigna un repartidor y selecciona los pedidos en estado LISTO.</p>
+            </div>
+            <a href="{% url 'despachos:index' %}" class="btn btn-outline-secondary">Volver</a>
+        </div>
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0 fw-bold text-dulce-cafe">1. Datos de la Ruta</h5>
+                </div>
+                <div class="card-body p-4 pt-0">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Fecha de Despacho *</label>
+                            {{ form.fecha }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Repartidor Asignado *</label>
+                            {{ form.repartidor }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Vehículo</label>
+                            {{ form.vehiculo }}
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label fw-semibold">Observaciones de la Ruta</label>
+                        {{ form.observaciones }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0 fw-bold text-dulce-cafe">2. Seleccionar Pedidos Listos para Entrega</h5>
+                </div>
+                <div class="card-body p-4 pt-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light small text-uppercase">
+                                <tr>
+                                    <th style="width: 5%;"></th>
+                                    <th>Código</th>
+                                    <th>Cliente</th>
+                                    <th>Dirección de Entrega</th>
+                                    <th>Hora Programada</th>
+                                    <th>Total / Saldo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for p in pedidos_disponibles %}
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" name="pedidos[]" value="{{ p.id }}" class="form-check-input" id="chk_{{ p.id }}">
+                                    </td>
+                                    <td>
+                                        <label class="fw-bold text-dulce-cafe mb-0" for="chk_{{ p.id }}">{{ p.codigo|default:p.id }}</label>
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold">{{ p.cliente.nombre_completo }}</div>
+                                        <div class="small text-muted">{{ p.cliente.telefono }}</div>
+                                    </td>
+                                    <td class="small">{{ p.direccion_entrega }}</td>
+                                    <td>{{ p.fecha_entrega|date:"H:i" }} hrs</td>
+                                    <td>
+                                        <div>Total: ${{ p.total|floatformat:0 }}</div>
+                                        {% if p.saldo > 0 %}
+                                        <div class="small text-danger fw-bold">Saldo: ${{ p.saldo|floatformat:0 }}</div>
+                                        {% else %}
+                                        <div class="small text-success fw-bold">Saldado</div>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-4 text-muted">
+                                        No hay pedidos en estado LISTO disponibles para asignar a una ruta.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <a href="{% url 'despachos:index' %}" class="btn btn-outline-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-dulce px-5 py-2 fw-bold" {% if not pedidos_disponibles %}disabled{% endif %}>
+                            Crear Ruta de Despacho
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

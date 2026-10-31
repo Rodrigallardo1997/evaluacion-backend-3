@@ -1,0 +1,55 @@
+# Entornos virtuales
+venv/
+env/
+.venv/
+ENV/
+
+# Variables de entorno
+.env
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+*.pyd
+
+# Django
+staticfiles/
+db.sqlite3
+db.sqlite3-journal
+
+# Media (mantener estructura pero no archivos)
+media/*
+!media/.gitkeep
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+
+# Distribución / packaging
+dist/
+build/
+*.egg-info/
+*.egg
+MANIFEST
+
+# Pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# mypy
+.mypy_cache/
+
+# Sistema operativo
+.DS_Store
+Thumbs.db

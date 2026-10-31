@@ -1,0 +1,293 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ titulo }} — Dulce Arte{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h3 mb-0 text-dulce-cafe fw-bold">
+                    <i class="bi bi-journal-plus me-2"></i>{{ titulo }}
+                </h1>
+                <p class="text-muted small mb-0">Define parámetros de venta y Lista de Materiales (BOM) con merma.</p>
+            </div>
+            <a href="{% url 'catalogo:index' %}" class="btn btn-outline-secondary">Volver al catálogo</a>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" id="formReceta" novalidate>
+            {% csrf_token %}
+
+            <!-- SECCIÓN 1: DATOS GENERALES Y PRECIO -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0 fw-bold text-dulce-cafe">1. Datos Generales del Producto</h5>
+                </div>
+                <div class="card-body p-4 pt-0">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold">Nombre de la Receta *</label>
+                            {{ form.nombre }}
+                            {% if form.nombre.errors %}<div class="text-danger small">{{ form.nombre.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Categoría *</label>
+                            {{ form.categoria }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Descripción del Producto *</label>
+                        {{ form.descripcion }}
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Rendimiento (unidades) *</label>
+                            {{ form.rendimiento }}
+                            <div class="form-text">Cantidad de porciones/pasteles producidos.</div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Precio Base Venta ($ CLP) *</label>
+                            {{ form.precio_base }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Margen Deseado (%)</label>
+                            {{ form.margen_deseado }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Tiempo Preparación (min)</label>
+                            {{ form.tiempo_preparacion_min }}
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3 align-items-center">
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold">Foto del Producto</label>
+                            {{ form.imagen }}
+                        </div>
+                        <div class="col-md-4 pt-4">
+                            <div class="form-check">
+                                {{ form.activo }}
+                                <label class="form-check-label fw-semibold" for="{{ form.activo.id_for_label }}">
+                                    Receta Activa para Cotizar
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 2: LISTA DE MATERIALES (BOM) -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-0 fw-bold text-dulce-cafe">2. Lista de Materiales (BOM)</h5>
+                        <small class="text-muted">Insumos exactos que se descontarán de bodega al confirmar cada pedido.</small>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-success" id="btnAgregarInsumo">
+                        <i class="bi bi-plus-lg me-1"></i>Agregar Insumo
+                    </button>
+                </div>
+                <div class="card-body p-4 pt-0">
+                    <div class="table-responsive">
+                        <table class="table align-middle" id="tablaBOM">
+                            <thead class="table-light small text-uppercase">
+                                <tr>
+                                    <th style="width: 40%;">Insumo de Bodega *</th>
+                                    <th style="width: 20%;">Cantidad Requerida *</th>
+                                    <th style="width: 15%;">Merma (%)</th>
+                                    <th style="width: 20%;">Costo Insumo</th>
+                                    <th style="width: 5%;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="bomContainer">
+                                {% if receta and receta.insumos.exists %}
+                                    {% for ri in receta.insumos.all %}
+                                    <tr class="fila-bom">
+                                        <td>
+                                            <select name="insumo_id[]" class="form-select select-insumo" required>
+                                                <option value="">Seleccione insumo...</option>
+                                                {% for ins in insumos_disponibles %}
+                                                <option value="{{ ins.id }}" data-costo="{{ ins.costo_unitario }}" data-unidad="{{ ins.unidad }}" {% if ri.insumo_id == ins.id %}selected{% endif %}>
+                                                    {{ ins.nombre }} ({{ ins.unidad }}) - ${{ ins.costo_unitario }}/{{ ins.unidad }}
+                                                </option>
+                                                {% endfor %}
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <div class="input-group">
+                                                <input type="number" name="cantidad[]" class="form-control input-cantidad" step="0.001" min="0.001" value="{{ ri.cantidad }}" required>
+                                                <span class="input-group-text unidad-label">{{ ri.insumo.unidad }}</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <input type="number" name="merma[]" class="form-control input-merma" step="0.1" min="0" max="100" value="{{ ri.merma_porcentaje }}">
+                                        </td>
+                                        <td>
+                                            <span class="costo-linea fw-semibold text-dark">$0</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-fila">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr class="fila-bom">
+                                        <td>
+                                            <select name="insumo_id[]" class="form-select select-insumo" required>
+                                                <option value="">Seleccione insumo...</option>
+                                                {% for ins in insumos_disponibles %}
+                                                <option value="{{ ins.id }}" data-costo="{{ ins.costo_unitario }}" data-unidad="{{ ins.unidad }}">
+                                                    {{ ins.nombre }} ({{ ins.unidad }}) - ${{ ins.costo_unitario }}/{{ ins.unidad }}
+                                                </option>
+                                                {% endfor %}
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <div class="input-group">
+                                                <input type="number" name="cantidad[]" class="form-control input-cantidad" step="0.001" min="0.001" value="1.000" required>
+                                                <span class="input-group-text unidad-label">U</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <input type="number" name="merma[]" class="form-control input-merma" step="0.1" min="0" max="100" value="0">
+                                        </td>
+                                        <td>
+                                            <span class="costo-linea fw-semibold text-dark">$0</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-fila">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Resumen de Costos en Vivo -->
+                    <div class="row justify-content-end mt-3">
+                        <div class="col-md-5">
+                            <div class="bg-light p-3 rounded">
+                                <div class="d-flex justify-content-between small mb-1">
+                                    <span>Costo Total Insumos:</span>
+                                    <strong id="lblCostoTotal">$0</strong>
+                                </div>
+                                <div class="d-flex justify-content-between small mb-1">
+                                    <span>Costo Unitario Producción:</span>
+                                    <strong id="lblCostoUnitario">$0</strong>
+                                </div>
+                                <div class="d-flex justify-content-between small">
+                                    <span>Margen Estimado:</span>
+                                    <strong id="lblMargenEstimado" class="text-success">0%</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <a href="{% url 'catalogo:index' %}" class="btn btn-outline-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-dulce px-5 py-2 fw-bold">Guardar Receta y BOM</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const container = document.getElementById("bomContainer");
+        const btnAgregar = document.getElementById("btnAgregarInsumo");
+        const inputRendimiento = document.getElementById("id_rendimiento");
+        const inputPrecioBase = document.getElementById("id_precio_base");
+        const lblCostoTotal = document.getElementById("lblCostoTotal");
+        const lblCostoUnitario = document.getElementById("lblCostoUnitario");
+        const lblMargenEstimado = document.getElementById("lblMargenEstimado");
+
+        function calcularCostos() {
+            let costoTotalInsumos = 0;
+            const filas = container.querySelectorAll(".fila-bom");
+
+            filas.forEach(fila => {
+                const selectInsumo = fila.querySelector(".select-insumo");
+                const opt = selectInsumo.options[selectInsumo.selectedIndex];
+                const costoUnitario = parseFloat(opt ? opt.getAttribute("data-costo") : 0) || 0;
+                const cant = parseFloat(fila.querySelector(".input-cantidad").value) || 0;
+                const merma = parseFloat(fila.querySelector(".input-merma").value) || 0;
+
+                // cantidad_neta = cant * (1 + merma/100)
+                const cantNeta = cant * (1 + (merma / 100));
+                const costoLinea = cantNeta * costoUnitario;
+
+                costoTotalInsumos += costoLinea;
+                fila.querySelector(".costo-linea").textContent = "$" + costoLinea.toFixed(2);
+            });
+
+            const rendimiento = parseInt(inputRendimiento.value, 10) || 1;
+            const costoUnitarioProd = rendimiento > 0 ? (costoTotalInsumos / rendimiento) : 0;
+            const precioBase = parseFloat(inputPrecioBase.value) || 0;
+
+            let margen = 0;
+            if (precioBase > 0) {
+                margen = ((precioBase - costoUnitarioProd) / precioBase) * 100;
+            }
+
+            lblCostoTotal.textContent = "$" + costoTotalInsumos.toFixed(2);
+            lblCostoUnitario.textContent = "$" + costoUnitarioProd.toFixed(2);
+            lblMargenEstimado.textContent = margen.toFixed(1) + "%";
+            lblMargenEstimado.className = margen >= 30 ? "text-success fw-bold" : "text-warning fw-bold";
+        }
+
+        btnAgregar.addEventListener("click", function () {
+            const primeraFila = container.querySelector(".fila-bom");
+            const nuevaFila = primeraFila.cloneNode(true);
+            nuevaFila.querySelector(".select-insumo").value = "";
+            nuevaFila.querySelector(".input-cantidad").value = "1.000";
+            nuevaFila.querySelector(".input-merma").value = "0";
+            nuevaFila.querySelector(".costo-linea").textContent = "$0";
+            nuevaFila.querySelector(".unidad-label").textContent = "U";
+            container.appendChild(nuevaFila);
+            vincularEventos(nuevaFila);
+            calcularCostos();
+        });
+
+        function vincularEventos(fila) {
+            const selectInsumo = fila.querySelector(".select-insumo");
+            const inputCantidad = fila.querySelector(".input-cantidad");
+            const inputMerma = fila.querySelector(".input-merma");
+            const btnEliminar = fila.querySelector(".btn-eliminar-fila");
+            const unidadLabel = fila.querySelector(".unidad-label");
+
+            selectInsumo.addEventListener("change", function () {
+                const opt = selectInsumo.options[selectInsumo.selectedIndex];
+                unidadLabel.textContent = opt ? (opt.getAttribute("data-unidad") || "U") : "U";
+                calcularCostos();
+            });
+
+            inputCantidad.addEventListener("input", calcularCostos);
+            inputMerma.addEventListener("input", calcularCostos);
+
+            btnEliminar.addEventListener("click", function () {
+                if (container.querySelectorAll(".fila-bom").length > 1) {
+                    fila.remove();
+                    calcularCostos();
+                } else {
+                    alert("La receta debe tener al menos un insumo.");
+                }
+            });
+        }
+
+        container.querySelectorAll(".fila-bom").forEach(vincularEventos);
+        inputRendimiento.addEventListener("input", calcularCostos);
+        inputPrecioBase.addEventListener("input", calcularCostos);
+        calcularCostos();
+    });
+</script>
+{% endblock %}

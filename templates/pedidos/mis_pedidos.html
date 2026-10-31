@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block title %}Mis Pedidos — Dulce Arte{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h1 class="h3 mb-0 text-dulce-cafe fw-bold">
+        <i class="bi bi-person-heart me-2"></i>Mis Pedidos Personalizados
+    </h1>
+    <p class="text-muted small mb-0">Revisa el estado de preparación de tus pasteles y el comprobante de entrega.</p>
+</div>
+
+<div class="row g-4">
+    {% for p in pedidos %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                <span class="fw-bold text-dulce-cafe fs-5">{{ p.codigo|default:p.id }}</span>
+                <span class="badge badge-estado-{{ p.estado|lower }} px-2 py-1">
+                    {{ p.get_estado_display }}
+                </span>
+            </div>
+            <div class="card-body pt-0">
+                <div class="mb-2">
+                    <span class="small text-muted d-block">Entrega Estimada:</span>
+                    <strong class="text-dark"><i class="bi bi-calendar3 me-1"></i>{{ p.fecha_entrega|date:"d-m-Y H:i" }} hrs</strong>
+                </div>
+                <div class="mb-3">
+                    <span class="small text-muted d-block">Diseño:</span>
+                    <p class="small text-muted mb-0">{{ p.diseno_descripcion|truncatechars:80 }}</p>
+                </div>
+
+                <div class="bg-light p-2 rounded mb-3">
+                    <div class="d-flex justify-content-between small">
+                        <span>Total:</span>
+                        <strong>${{ p.total|floatformat:0 }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between small">
+                        <span>Saldo Pendiente:</span>
+                        {% if p.saldo > 0 %}
+                        <strong class="text-danger">${{ p.saldo|floatformat:0 }}</strong>
+                        {% else %}
+                        <strong class="text-success">Pagado ✓</strong>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if p.estado == 'ENTREGADO' %}
+                <div class="alert alert-success py-2 px-3 small mb-2">
+                    <i class="bi bi-check-circle-fill me-1"></i>Entregado el {{ p.fecha_entrega_real|date:"d-m-Y H:i" }}
+                </div>
+                {% endif %}
+
+                <a href="{% url 'pedidos:detalle' p.id %}" class="btn btn-sm btn-outline-secondary w-100">
+                    Ver Detalle y Trazabilidad
+                </a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center py-5">
+        <i class="bi bi-cake2 fs-1 text-muted d-block mb-3"></i>
+        <h5 class="text-muted">Aún no tienes pedidos registrados</h5>
+        <p class="text-muted small">Comunícate con nuestro equipo o visita nuestra tienda para cotizar tu primer pastel artesanal.</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

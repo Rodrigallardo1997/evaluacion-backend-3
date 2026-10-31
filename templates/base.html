@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Dulce Arte{% endblock %}</title>
+
+    <!-- Bootstrap 5.3 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- CSS propio -->
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/estilos.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-dulce-crema d-flex flex-column min-vh-100">
+
+<!-- ================================================================
+     NAVBAR SUPERIOR
+================================================================ -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dulce-cafe shadow-sm sticky-top">
+    <div class="container-fluid">
+        <!-- Brand -->
+        <a class="navbar-brand fw-bold d-flex align-items-center" href="{% url 'dashboard:index' %}">
+            <span class="fs-4 me-2">🎂</span>
+            <span>Dulce Arte</span>
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarMain" aria-controls="navbarMain"
+                aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarMain">
+            {% if user.is_authenticated %}
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+
+                <!-- Dashboard: Todos los roles -->
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.view_name == 'dashboard:index' %}active{% endif %}"
+                       href="{% url 'dashboard:index' %}">
+                        <i class="bi bi-speedometer2 me-1"></i>Dashboard
+                    </a>
+                </li>
+
+                <!-- Admin & Superuser -->
+                {% if user.is_superuser or user.es_admin %}
+                <li class="nav-item">
+                    <a class="nav-link {% if 'pedidos:clientes' in request.resolver_match.view_name %}active{% endif %}"
+                       href="{% url 'pedidos:clientes' %}">
+                        <i class="bi bi-people me-1"></i>Clientes
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if 'catalogo:insumos' in request.resolver_match.view_name %}active{% endif %}"
+                       href="{% url 'catalogo:insumos' %}">
+                        <i class="bi bi-boxes me-1"></i>Insumos
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if 'catalogo:index' in request.resolver_match.view_name %}active{% endif %}"
+                       href="{% url 'catalogo:index' %}">
+                        <i class="bi bi-journal-richtext me-1"></i>Recetas (BOM)
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.view_name == 'pedidos:index' %}active{% endif %}"
+                       href="{% url 'pedidos:index' %}">
+                        <i class="bi bi-bag-check me-1"></i>Pedidos
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.view_name == 'pedidos:kanban' %}active{% endif %}"
+                       href="{% url 'pedidos:kanban' %}">
+                        <i class="bi bi-kanban me-1 text-warning"></i>Kanban Cocina
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if 'despachos:' in request.resolver_match.view_name %}active{% endif %}"
+                       href="{% url 'despachos:index' %}">
+                        <i class="bi bi-truck me-1"></i>Rutas
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.view_name == 'inventario:index' %}active{% endif %}"
+                       href="{% url 'inventario:index' %}">
+                        <i class="bi bi-clock-history me-1"></i>Auditoría Stock
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.view_name == 'dashboard:reportes' %}active{% endif %}"
+                       href="{% url 'dashboard:reportes' %}">
+                        <i class="bi bi-bar-chart-line me-1"></i>Reportes
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'admin:index' %}" target="_blank">
+                        <i class="bi bi-shield-lock me-1"></i>Django Admin
+                    </a>
+                </li>
+
+                <!-- Vendedor -->
+                {% elif user.es_vendedor %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'pedidos:clientes' %}">
+                        <i class="bi bi-people me-1"></i>Clientes
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'pedidos:index' %}">
+                        <i class="bi bi-bag-check me-1"></i>Pedidos
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'pedidos:kanban' %}">
+                        <i class="bi bi-kanban me-1"></i>Kanban
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'catalogo:insumos' %}">
+                        <i class="bi bi-boxes me-1"></i>Insumos
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'despachos:index' %}">
+                        <i class="bi bi-truck me-1"></i>Rutas
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'dashboard:reportes' %}">
+                        <i class="bi bi-bar-chart-line me-1"></i>Reportes
+                    </a>
+                </li>
+
+                <!-- Cocina -->
+                {% elif user.es_cocina %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'pedidos:kanban' %}">
+                        <i class="bi bi-kanban me-1 text-warning"></i>Tablero Kanban
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'pedidos:index' %}">
+                        <i class="bi bi-bag-check me-1"></i>Pedidos
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'catalogo:index' %}">
+                        <i class="bi bi-journal-richtext me-1"></i>Recetas (BOM)
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'catalogo:insumos' %}">
+                        <i class="bi bi-boxes me-1"></i>Insumos
+                    </a>
+                </li>
+
+                <!-- Repartidor -->
+                {% elif user.es_repartidor %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'despachos:mis_rutas' %}">
+                        <i class="bi bi-map me-1"></i>Mis Rutas
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'despachos:entregas' %}">
+                        <i class="bi bi-box-seam me-1"></i>Entregas Pendientes
+                    </a>
+                </li>
+
+                <!-- Cliente -->
+                {% elif user.es_cliente %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'pedidos:mis_pedidos' %}">
+                        <i class="bi bi-bag-check me-1"></i>Mis Pedidos
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+
+            <!-- Menú de usuario y sesión -->
+            <ul class="navbar-nav ms-auto align-items-center">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle d-flex align-items-center text-white" href="#" role="button"
+                       data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-person-circle fs-5 me-2 text-dulce-rosa"></i>
+                        <span>{{ user.get_full_name|default:user.username }}</span>
+                        <span class="badge bg-dulce-rosa text-dulce-cafe ms-2 small">{{ user.get_rol_display }}</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow">
+                        <li>
+                            <div class="px-3 py-1">
+                                <small class="text-muted d-block">Usuario autenticado</small>
+                                <strong>{{ user.username }}</strong>
+                            </div>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        {% if user.is_staff %}
+                        <li>
+                            <a class="dropdown-item" href="{% url 'admin:index' %}" target="_blank">
+                                <i class="bi bi-gear me-2"></i>Panel de Administración
+                            </a>
+                        </li>
+                        {% endif %}
+                        <li>
+                            <form method="post" action="{% url 'logout' %}">
+                                {% csrf_token %}
+                                <button type="submit" class="dropdown-item text-danger">
+                                    <i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+            {% endif %}
+        </div>
+    </div>
+</nav>
+
+<!-- ================================================================
+     MENSAJES FLASH
+================================================================ -->
+{% if messages %}
+<div class="container-fluid mt-3">
+    {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %}
+                alert-dismissible fade show shadow-sm" role="alert">
+        {% if message.tags == 'success' %}<i class="bi bi-check-circle-fill me-2"></i>
+        {% elif message.tags == 'error' or message.tags == 'danger' %}<i class="bi bi-exclamation-triangle-fill me-2"></i>
+        {% elif message.tags == 'warning' %}<i class="bi bi-exclamation-circle-fill me-2"></i>
+        {% else %}<i class="bi bi-info-circle-fill me-2"></i>{% endif %}
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- ================================================================
+     CONTENIDO PRINCIPAL
+================================================================ -->
+<main class="container-fluid py-4 flex-grow-1">
+    {% block content %}{% endblock %}
+</main>
+
+<!-- ================================================================
+     FOOTER
+================================================================ -->
+<footer class="footer mt-auto py-3 bg-dulce-cafe text-white border-top border-3 border-dulce-rosa">
+    <div class="container-fluid text-center">
+        <small>
+            🎂 <strong>Dulce Arte Pastelería Artesanal</strong> &copy; 2024 | Proyecto EVA 3 &mdash; Rodrigo Gallardo
+        </small>
+    </div>
+</footer>
+
+<!-- Toast Container para JS -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer" style="z-index: 9999;">
+    <div id="toastPrincipal" class="toast align-items-center text-white bg-dark border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body" id="toastMensaje"></div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Cerrar"></button>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap 5.3 JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>
