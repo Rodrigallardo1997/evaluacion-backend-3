@@ -29,8 +29,8 @@
         </a>
         {% endif %}
 
-        {% if user.es_admin or user.es_vendedor or user.es_cocina %}
-            {% if pedido.estado == 'BORRADOR' and not user.es_cocina %}
+        {% if user.es_admin or user.es_vendedor %}
+            {% if pedido.estado == 'BORRADOR' %}
             <form method="post" action="{% url 'pedidos:cotizar' pedido.id %}" onsubmit="return confirm('¿Desea emitir la cotización formal por un total de ${{ pedido.total|floatformat:0 }}?');">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-primary">
@@ -42,12 +42,12 @@
                 {% csrf_token %}
                 <input type="hidden" name="version" value="{{ pedido.version }}">
                 <button type="submit" class="btn btn-success fw-bold px-3 shadow-sm">
-                    <i class="bi bi-check-circle-fill me-1"></i>Confirmar Pedido & Enviar a Cocina (BOM)
+                    <i class="bi bi-check-circle-fill me-1"></i>Confirmar Pedido (BOM)
                 </button>
             </form>
             {% endif %}
 
-            {% if pedido.estado != 'CANCELADO' and pedido.estado != 'ENTREGADO' and not user.es_cocina %}
+            {% if pedido.estado != 'CANCELADO' and pedido.estado != 'ENTREGADO' %}
             <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalCancelar">
                 <i class="bi bi-x-circle me-1"></i>Cancelar
             </button>
