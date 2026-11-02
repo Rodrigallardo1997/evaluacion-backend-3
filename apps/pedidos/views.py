@@ -21,6 +21,7 @@ from apps.pedidos.services.cotizacion_service import (
     registrar_pago_pedido,
     ConflictError,
 )
+from apps.usuarios.models import Usuario
 from apps.usuarios.permissions import role_required
 
 
