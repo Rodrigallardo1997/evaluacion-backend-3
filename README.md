@@ -9,9 +9,7 @@
 **Evaluación Parcial N°3 (30% de la nota final)**  
 **Asignatura:** Desarrollo Backend  
 **Autor:** Rodrigo Alejandro Gallardo Martínez  
-**Despliegue en Producción:** `http://TU_IP_PUBLICA/` (Reemplazar con la Elastic IP asignada en AWS EC2)  
-**Documentación Swagger UI:** `http://TU_IP_PUBLICA/api/docs/`  
-**Panel Django Admin:** `http://TU_IP_PUBLICA/admin/`
+**Despliegue en Producción:** `dulce-arte.duckdns.org` (Reemplazar con la Elastic IP asignada en AWS EC2)  
 
 ---
 
