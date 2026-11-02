@@ -9,7 +9,7 @@
 **Evaluación Parcial N°3 (30% de la nota final)**  
 **Asignatura:** Desarrollo Backend  
 **Autor:** Rodrigo Alejandro Gallardo Martínez  
-**Despliegue en Producción:** `dulce-arte.duckdns.org` (Reemplazar con la Elastic IP asignada en AWS EC2)  
+**Despliegue en Producción:** `dulce-arte.duckdns.org` 
 
 ---
 
