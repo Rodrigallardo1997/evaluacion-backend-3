@@ -1,11 +1,17 @@
 """
-Formularios para Pedidos y Clientes.
+Formularios web basados en modelos (ModelForms) para Pedidos, Clientes y Pagos.
+Permiten la validación en servidor, renderizado con clases Bootstrap 5 y
+adaptación de campos según el rol del usuario (Cliente vs. Vendedor/Admin).
 """
 from django import forms
 from apps.pedidos.models import Cliente, Pedido, DetallePedido, Pago
 
 
 class ClienteForm(forms.ModelForm):
+    """
+    Formulario para el registro y actualización de datos de contacto de clientes.
+    Incluye validación de formato para RUT chileno y teléfono de contacto.
+    """
     class Meta:
         model = Cliente
         fields = [
@@ -31,6 +37,10 @@ class ClienteForm(forms.ModelForm):
 
 
 class PedidoForm(forms.ModelForm):
+    """
+    Formulario principal para la creación y cotización de pedidos (RF1).
+    Soporta modo 'es_cliente': oculta selección de cliente (se autoasigna) y descuento comercial.
+    """
     class Meta:
         model = Pedido
         fields = [
@@ -59,6 +69,7 @@ class PedidoForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        # Si el usuario conectado es Cliente, protegemos los campos de uso exclusivo de vendedores
         es_cliente = kwargs.pop("es_cliente", False)
         super().__init__(*args, **kwargs)
         if es_cliente:
@@ -70,6 +81,10 @@ class PedidoForm(forms.ModelForm):
 
 
 class PagoForm(forms.ModelForm):
+    """
+    Formulario para el registro financiero de anticipos (50%) y pagos de saldo final.
+    Permite adjuntar comprobante de transferencia bancaria para auditoría contable.
+    """
     class Meta:
         model = Pago
         fields = ["tipo", "metodo", "monto", "referencia", "comprobante"]

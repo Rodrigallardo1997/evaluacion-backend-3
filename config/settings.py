@@ -1,16 +1,18 @@
 """
-Django settings for Dulce Arte project.
+Configuración principal de Django para el proyecto Dulce Arte.
+Evaluación Parcial N°3 - Desarrollo Backend.
+Autor: Rodrigo Alejandro Gallardo Martínez.
 """
 from pathlib import Path
 import environ
 
 # ---------------------------------------------------------------------------
-# Paths
+# Rutas y Directorios Base del Proyecto
 # ---------------------------------------------------------------------------
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # ---------------------------------------------------------------------------
-# django-environ
+# Carga de Variables de Entorno (django-environ)
 # ---------------------------------------------------------------------------
 env = environ.Env(
     DEBUG=(bool, False),
@@ -18,7 +20,7 @@ env = environ.Env(
 environ.Env.read_env(BASE_DIR / '.env')
 
 # ---------------------------------------------------------------------------
-# Core
+# Configuración Principal y Seguridad Básica
 # ---------------------------------------------------------------------------
 SECRET_KEY = env('SECRET_KEY')
 DEBUG = env('DEBUG')
@@ -26,10 +28,10 @@ ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1'])
 CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS', default=['http://localhost:8000'])
 
 # ---------------------------------------------------------------------------
-# Application definition
+# Definición de Aplicaciones Instaladas
 # ---------------------------------------------------------------------------
 INSTALLED_APPS = [
-    # Django built-ins
+    # Módulos nativos de Django
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -37,11 +39,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    # Third-party
+    # Paquetes y librerías de terceros
     'rest_framework',
     'drf_spectacular',
 
-    # Project apps
+    # Aplicaciones del dominio de negocio Dulce Arte
     'apps.usuarios',
     'apps.catalogo',
     'apps.pedidos',
@@ -83,7 +85,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 ASGI_APPLICATION = 'config.asgi.application'
 
 # ---------------------------------------------------------------------------
-# Database — psycopg3
+# Base de Datos — PostgreSQL 16 con psycopg
 # ---------------------------------------------------------------------------
 DATABASES = {
     'default': {
@@ -96,7 +98,7 @@ DATABASES = {
 }
 
 # ---------------------------------------------------------------------------
-# Auth
+# Autenticación y Control de Acceso (RBAC)
 # ---------------------------------------------------------------------------
 AUTH_USER_MODEL = 'usuarios.Usuario'
 
@@ -112,7 +114,7 @@ LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 
 # ---------------------------------------------------------------------------
-# Internationalization
+# Internacionalización y Zona Horaria (Chile Continental)
 # ---------------------------------------------------------------------------
 LANGUAGE_CODE = 'es-cl'
 TIME_ZONE = 'America/Santiago'
@@ -120,7 +122,7 @@ USE_I18N = True
 USE_TZ = True
 
 # ---------------------------------------------------------------------------
-# Static files
+# Archivos Estáticos (CSS, JavaScript, Imágenes de Plantilla)
 # ---------------------------------------------------------------------------
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
@@ -128,36 +130,36 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # ---------------------------------------------------------------------------
-# Media files
+# Archivos Multimedia Subidos (Fotos de Tortas, Firmas de Entrega)
 # ---------------------------------------------------------------------------
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 # ---------------------------------------------------------------------------
-# Sessions
+# Gestión de Sesiones de Usuario
 # ---------------------------------------------------------------------------
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
-SESSION_COOKIE_AGE = 28800  # 8 horas
+SESSION_COOKIE_AGE = 28800  # 8 horas de duración de sesión activa
 
 # ---------------------------------------------------------------------------
-# Transactions
+# Control Transaccional Explícito
 # ---------------------------------------------------------------------------
-ATOMIC_REQUESTS = False  # Usamos transacciones explícitas
+ATOMIC_REQUESTS = False  # Usamos @transaction.atomic() explícito en servicios críticos
 
 # ---------------------------------------------------------------------------
-# Default primary key field type
+# Identificador Primario por Defecto (Big Auto Field)
 # ---------------------------------------------------------------------------
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # ---------------------------------------------------------------------------
-# Security headers
+# Cabeceras de Seguridad HTTP
 # ---------------------------------------------------------------------------
 X_FRAME_OPTIONS = 'DENY'
 SECURE_CONTENT_TYPE_NOSNIFF = True
 
 # ---------------------------------------------------------------------------
-# Django REST Framework
+# Configuración de Django REST Framework (DRF)
 # ---------------------------------------------------------------------------
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -173,7 +175,7 @@ REST_FRAMEWORK = {
 }
 
 # ---------------------------------------------------------------------------
-# drf-spectacular
+# Documentación OpenAPI / Swagger con drf-spectacular
 # ---------------------------------------------------------------------------
 SPECTACULAR_SETTINGS = {
     'TITLE': 'Dulce Arte API',
@@ -184,7 +186,7 @@ SPECTACULAR_SETTINGS = {
 }
 
 # ---------------------------------------------------------------------------
-# Logging
+# Registro de Bitácora y Auditoría de Logs
 # ---------------------------------------------------------------------------
 LOGGING = {
     'version': 1,

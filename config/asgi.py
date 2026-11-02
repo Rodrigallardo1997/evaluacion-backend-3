@@ -1,5 +1,6 @@
 """
-ASGI config for Dulce Arte project.
+Configuración ASGI para soporte asíncrono en el proyecto Dulce Arte.
+Expone la aplicación ASGI invocable a nivel de módulo llamada 'application'.
 """
 import os
 from django.core.asgi import get_asgi_application
