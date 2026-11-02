@@ -103,6 +103,17 @@ h1, h2, h3, h4, h5, h6 {
     letter-spacing: 0.04em;
 }
 
+.badge-estado-borrador           { background-color: #6c757d !important; color: #ffffff !important; }
+.badge-estado-cotizado           { background-color: #e0f2fe !important; color: #0369a1 !important; border: 1px solid #7dd3fc; }
+.badge-estado-confirmado         { background-color: #0d6efd !important; color: #ffffff !important; }
+.badge-estado-en_preparacion     { background-color: #fd7e14 !important; color: #ffffff !important; }
+.badge-estado-horneado_decorado  { background-color: #ffc107 !important; color: #212529 !important; }
+.badge-estado-control_calidad    { background-color: #20c997 !important; color: #ffffff !important; }
+.badge-estado-listo              { background-color: #198754 !important; color: #ffffff !important; }
+.badge-estado-en_despacho        { background-color: #6f42c1 !important; color: #ffffff !important; }
+.badge-estado-entregado          { background-color: #146c43 !important; color: #ffffff !important; }
+.badge-estado-cancelado          { background-color: #dc3545 !important; color: #ffffff !important; }
+
 .badge-pendiente    { background-color: #FFF3CD; color: #856404; }
 .badge-produccion   { background-color: #CCE5FF; color: #004085; }
 .badge-listo        { background-color: #D4EDDA; color: #155724; }
