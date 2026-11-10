@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     # Paquetes y librerías de terceros
     'rest_framework',
     'drf_spectacular',
+    'storages',
 
     # Aplicaciones del dominio de negocio Dulce Arte
     'apps.usuarios',
@@ -122,18 +123,47 @@ USE_I18N = True
 USE_TZ = True
 
 # ---------------------------------------------------------------------------
-# Archivos Estáticos (CSS, JavaScript, Imágenes de Plantilla)
+# Archivos Estáticos y Multimedia (Soporte Dual: Local y AWS S3)
 # ---------------------------------------------------------------------------
-STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_DIRS = [BASE_DIR / 'static']
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+USE_S3 = env.bool('USE_S3', default=False)
+
+if USE_S3:
+    # Configuración de credenciales de AWS S3
+    AWS_ACCESS_KEY_ID = env('AWS_ACCESS_KEY_ID', default='')
+    AWS_SECRET_ACCESS_KEY = env('AWS_SECRET_ACCESS_KEY', default='')
+    AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME', default='dulcearte-media-bucket')
+    AWS_S3_REGION_NAME = env('AWS_S3_REGION_NAME', default='us-east-1')
+    AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
+    AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
+    AWS_DEFAULT_ACL = 'public-read'
+
+    # Almacenamiento multimedia remoto en S3 (Fotos de Tortas y Firmas)
+    DEFAULT_FILE_STORAGE = 'config.storage_backends.MediaStorage'
+    MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
+
+    # Configuración de estáticos con fallback a WhiteNoise
+    if env.bool('USE_S3_FOR_STATIC', default=False):
+        STATICFILES_STORAGE = 'config.storage_backends.StaticStorage'
+        STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/static/'
+    else:
+        STATIC_URL = '/static/'
+        STATIC_ROOT = BASE_DIR / 'staticfiles'
+        STATICFILES_DIRS = [BASE_DIR / 'static']
+        STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+else:
+    # Almacenamiento local para desarrollo y servidores independientes
+    STATIC_URL = '/static/'
+    STATIC_ROOT = BASE_DIR / 'staticfiles'
+    STATICFILES_DIRS = [BASE_DIR / 'static']
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = BASE_DIR / 'media'
 
 # ---------------------------------------------------------------------------
-# Archivos Multimedia Subidos (Fotos de Tortas, Firmas de Entrega)
+# AWS SNS (Simple Notification Service) - Alertas y Mensajería Cloud
 # ---------------------------------------------------------------------------
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+AWS_SNS_TOPIC_ARN = env('AWS_SNS_TOPIC_ARN', default='')
 
 # ---------------------------------------------------------------------------
 # Gestión de Sesiones de Usuario
