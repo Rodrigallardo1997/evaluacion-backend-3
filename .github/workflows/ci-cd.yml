@@ -1,0 +1,142 @@
+name: CI/CD & DevSecOps Pipeline - Dulce Arte
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ============================================================================
+  # ETAPA 1: DEVSECOPS & PRUEBAS (SAST + AUDITORÍA DE DEPENDENCIAS + TESTS)
+  # ============================================================================
+  test_and_sast:
+    name: DevSecOps (SAST) & Unit Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: dulcearte_db_test
+          POSTGRES_USER: dulcearte_user
+          POSTGRES_PASSWORD: DulceArte2024!
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Descargar repositorio (Checkout)
+        uses: actions/checkout@v4
+
+      - name: Configurar entorno Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Instalar dependencias del sistema y proyecto
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      # ------------------------------------------------------------------------
+      # DEVSECOPS: ANÁLISIS ESTÁTICO DE SEGURIDAD (SAST)
+      # ------------------------------------------------------------------------
+      - name: DevSecOps SAST - Análisis de Vulnerabilidades de Código (Bandit)
+        run: |
+          echo "=== [DevSecOps SAST] Ejecutando escaneo Bandit en apps/ y config/ ==="
+          bandit -r apps/ config/ -ll -ii -o bandit-report.json -f json || true
+          bandit -r apps/ config/ -ll -ii
+
+      - name: DevSecOps - Auditoría de Vulnerabilidades en Dependencias (pip-audit)
+        run: |
+          echo "=== [DevSecOps] Escaneando CVEs en dependencias con pip-audit ==="
+          pip-audit --desc || echo "Advertencia: Revisar avisos de seguridad en librerías."
+
+      # ------------------------------------------------------------------------
+      # PRUEBAS AUTOMATIZADAS
+      # ------------------------------------------------------------------------
+      - name: Verificación de configuración de Django (System Check)
+        env:
+          SECRET_KEY: test-secret-key-for-ci-cd-pipeline-execution-only
+          DEBUG: 'True'
+          ALLOWED_HOSTS: '*'
+          DATABASE_URL: postgres://dulcearte_user:DulceArte2024!@localhost:5432/dulcearte_db_test
+        run: |
+          python manage.py check
+
+      - name: Ejecución de Suite de Pruebas Unitarias (16 Tests RF1-RF4)
+        env:
+          SECRET_KEY: test-secret-key-for-ci-cd-pipeline-execution-only
+          DEBUG: 'True'
+          ALLOWED_HOSTS: '*'
+          DATABASE_URL: postgres://dulcearte_user:DulceArte2024!@localhost:5432/dulcearte_db_test
+        run: |
+          python manage.py test apps.pedidos --verbosity=2
+
+  # ============================================================================
+  # ETAPA 2: CONTENERIZACIÓN (DOCKER BUILD & VALIDACIÓN)
+  # ============================================================================
+  docker_build:
+    name: Contenerización Docker (Build Check)
+    needs: test_and_sast
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar repositorio (Checkout)
+        uses: actions/checkout@v4
+
+      - name: Configurar Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Construir imagen Docker de Dulce Arte
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: dulcearte:latest
+
+  # ============================================================================
+  # ETAPA 3: DESPLIEGUE CONTINUO (CD) A SERVIDOR AWS EC2
+  # ============================================================================
+  deploy_production:
+    name: Despliegue Continuo (CD) a AWS EC2
+    needs: [test_and_sast, docker_build]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Desplegar en instancia AWS EC2 vía SSH
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          HOST: "32.196.211.81"
+          USERNAME: "ubuntu"
+          KEY: ${{ secrets.EC2_SSH_KEY }}
+        with:
+          host: 32.196.211.81
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            echo "=== [CD AWS EC2] Iniciando despliegue automatizado ==="
+            cd /home/ubuntu/dulcearte
+            git fetch origin main
+            git reset --hard origin/main
+            ./venv/bin/pip install --upgrade pip
+            ./venv/bin/pip install -r requirements.txt
+            ./venv/bin/python manage.py migrate --noinput
+            ./venv/bin/python manage.py collectstatic --noinput
+            sudo systemctl restart dulcearte
+            sudo systemctl reload nginx
+            echo "=== [CD AWS EC2] Despliegue completado exitosamente ==="

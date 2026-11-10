@@ -1,0 +1,32 @@
+# Control de versiones
+.git
+.gitignore
+
+# Entornos virtuales
+venv/
+.venv/
+env/
+.env
+
+# Cache de Python y compilados
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Archivos de base de datos local
+*.sqlite3
+*.db
+
+# Archivos estáticos y multimedia generados localmente
+staticfiles/
+media/
+*.log
+
+# Documentación de Office y temporales
+docs/*.docx
+scratch/
+scan.py
+scratch_generar_word.py
+.system_generated/

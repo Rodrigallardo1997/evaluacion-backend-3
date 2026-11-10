@@ -1,0 +1,6 @@
+# ==============================================================================
+# DEPENDENCIAS DEVSECOPS & CALIDAD DE CÓDIGO (SAST / AUDITORÍA)
+# ==============================================================================
+bandit>=1.7.9          # SAST (Static Application Security Testing) para Python
+pip-audit>=2.7.3       # Auditoría de vulnerabilidades y CVEs en dependencias
+flake8>=7.1.1          # Linter y análisis estático de buenas prácticas PEP8
