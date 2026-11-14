@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dulce Arte — Frontend Desacoplado (Cloud Architecture)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cafe: '#4A2C11',
+                        crema: '#FDF8F2',
+                        dorado: '#C89B3C',
+                        rosa: '#D9777F',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-crema text-gray-800 min-h-screen flex flex-col font-sans">
+
+    <!-- Barra Superior -->
+    <header class="bg-cafe text-white shadow-lg sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl">🎂</span>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wide">Dulce Arte</h1>
+                    <p class="text-xs text-amber-200">Frontend Desacoplado (S3 / EC2 Frontend) ➔ API Gateway ➔ Backend</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <span id="userBadge" class="hidden px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-cafe"></span>
+                <button id="btnOpenLogin" onclick="toggleModal('modalLogin', true)"
+                    class="bg-dorado hover:bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">
+                    Iniciar Sesión (Token)
+                </button>
+                <button id="btnLogout" onclick="cerrarSesion()"
+                    class="hidden bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">
+                    Cerrar Sesión
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Panel de Configuración Cloud (API Gateway & Lambda) -->
+    <section class="bg-amber-50 border-b border-amber-200">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div class="flex flex-wrap items-center gap-2 flex-1">
+                <span class="font-bold text-cafe">🔗 Endpoint API (API Gateway / Backend):</span>
+                <input id="inputApiUrl" type="text"
+                    class="border border-amber-300 rounded px-2 py-1 w-72 bg-white text-gray-800"
+                    value="http://32.196.211.81/api">
+                <span class="font-bold text-cafe ml-2">⚡ Lambda Mensajería:</span>
+                <input id="inputLambdaUrl" type="text"
+                    placeholder="https://xxx.lambda-url.us-east-1.on.aws/"
+                    class="border border-amber-300 rounded px-2 py-1 w-72 bg-white text-gray-800">
+                <button onclick="guardarConfig()" class="bg-cafe text-white px-3 py-1 rounded hover:bg-amber-900">
+                    Aplicar & Recargar
+                </button>
+            </div>
+            <div id="apiStatus" class="font-semibold text-gray-600">Estado API: Verificando...</div>
+        </div>
+    </section>
+
+    <main class="max-w-7xl mx-auto px-4 py-8 flex-1 w-full space-y-10">
+
+        <!-- Sección 1: Catálogo Público Consumido vía API REST -->
+        <section>
+            <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-cafe">Catálogo Artesanal en Vivo</h2>
+                    <p class="text-sm text-gray-600">Datos obtenidos en tiempo real vía <code class="bg-amber-100 px-1 rounded">GET /api/catalogo-publico/</code></p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <select id="filtroCategoria" onchange="renderCatalogo()" class="border border-amber-300 rounded-lg px-3 py-2 text-sm bg-white">
+                        <option value="">Todas las categorías</option>
+                        <option value="TORTA">Tortas</option>
+                        <option value="KUCHEN">Kuchenes</option>
+                        <option value="PIE">Pies</option>
+                        <option value="CHEESECAKE">Cheesecakes</option>
+                        <option value="CAFE">Cafés de Especialidad</option>
+                        <option value="DULCE">Opciones Dulces</option>
+                    </select>
+                    <input id="buscarProducto" oninput="renderCatalogo()" type="text" placeholder="Buscar pastel o café..."
+                        class="border border-amber-300 rounded-lg px-3 py-2 text-sm bg-white">
+                </div>
+            </div>
+
+            <div id="gridCatalogo" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Tarjetas generadas dinámicamente por JS -->
+            </div>
+        </section>
+
+        <!-- Sección 2: Pedidos del Usuario Autenticado (Requiere Token DRF) -->
+        <section id="seccionPedidos" class="hidden bg-white rounded-2xl shadow-md border border-amber-100 p-6">
+            <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+                <div>
+                    <h2 class="text-xl font-bold text-cafe">📋 Pedidos Registrados (Consumo Autenticado por Token)</h2>
+                    <p class="text-xs text-gray-500">Consumiendo <code class="bg-gray-100 px-1">GET /api/pedidos/</code> con header <code class="bg-gray-100 px-1">Authorization: Token ...</code></p>
+                </div>
+                <button onclick="cargarPedidos()" class="bg-cafe text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-amber-900">
+                    🔄 Actualizar Pedidos
+                </button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left border-collapse">
+                    <thead>
+                        <tr class="bg-amber-50 text-cafe border-b border-amber-200">
+                            <th class="py-2 px-3">Código</th>
+                            <th class="py-2 px-3">Cliente</th>
+                            <th class="py-2 px-3">Entrega</th>
+                            <th class="py-2 px-3">Estado</th>
+                            <th class="py-2 px-3">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaPedidosBody" class="divide-y divide-gray-100"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Sección 3: Mensajería Serverless (Lambda -> SNS) & Prueba de Rate Limit -->
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Mensajería Lambda + SNS -->
+            <div class="bg-white rounded-2xl shadow-md border border-amber-100 p-6">
+                <h3 class="text-lg font-bold text-cafe mb-1">📨 Mensajería Serverless (Frontend ➔ Lambda ➔ SNS)</h3>
+                <p class="text-xs text-gray-500 mb-4">Envía una notificación directa a AWS Lambda para alertar por correo/SMS vía AWS SNS.</p>
+                <form onsubmit="enviarMensajeLambda(event)" class="space-y-3">
+                    <input id="msgRemitente" type="text" required placeholder="Tu nombre o correo"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                    <input id="msgAsunto" type="text" required placeholder="Asunto (ej: Consulta torta personalizada)"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                    <textarea id="msgContenido" rows="2" required placeholder="Escribe el mensaje para la pastelería..."
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"></textarea>
+                    <button type="submit" class="w-full bg-dorado hover:bg-amber-600 text-white font-semibold py-2 rounded-lg text-sm transition">
+                        Enviar Notificación a AWS Lambda
+                    </button>
+                </form>
+                <div id="lambdaResultado" class="mt-3 text-xs"></div>
+            </div>
+
+            <!-- Demostración Rate Limit (API Gateway / Mitigación DoS) -->
+            <div class="bg-white rounded-2xl shadow-md border border-amber-100 p-6 flex flex-col justify-between">
+                <div>
+                    <h3 class="text-lg font-bold text-cafe mb-1">🛡️ Test de Rate Limit (Mitigación DoS / DDoS)</h3>
+                    <p class="text-xs text-gray-500 mb-4">
+                        Simula una ráfaga de peticiones rápidas hacia la API para verificar la respuesta del
+                        <strong>API Gateway / Nginx / DRF Throttling</strong> (<code class="bg-red-50 text-red-700 px-1">HTTP 429 Too Many Requests</code>).
+                    </p>
+                </div>
+                <div>
+                    <button onclick="probarRateLimit()" class="w-full bg-cafe hover:bg-amber-900 text-white font-semibold py-2 rounded-lg text-sm transition mb-3">
+                        ⚡ Lanzar Ráfaga de 25 Peticiones
+                    </button>
+                    <div id="rateLimitLog" class="bg-gray-900 text-green-400 font-mono text-xs p-3 rounded-lg h-32 overflow-y-auto">
+                        Esperando ejecución de prueba...
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-cafe text-amber-100 text-center py-4 text-xs mt-12">
+        Dulce Arte — Arquitectura Cloud Desacoplada (Frontend + API Gateway + Backend EC2 + RDS + S3 + Lambda/SNS) | Rodrigo Gallardo
+    </footer>
+
+    <!-- Modal de Login -->
+    <div id="modalLogin" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-cafe">🔐 Login Desacoplado (Token Auth)</h3>
+                <button onclick="toggleModal('modalLogin', false)" class="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+            </div>
+            <form onsubmit="iniciarSesion(event)" class="space-y-3">
+                <input id="loginUser" type="text" required placeholder="Usuario" class="w-full border rounded-lg px-3 py-2 text-sm">
+                <input id="loginPass" type="password" required placeholder="Contraseña" class="w-full border rounded-lg px-3 py-2 text-sm">
+                <button type="submit" class="w-full bg-cafe text-white font-semibold py-2 rounded-lg text-sm hover:bg-amber-900">
+                    Obtener Token e Ingresar
+                </button>
+            </form>
+            <div class="mt-4 pt-4 border-t">
+                <p class="text-xs text-gray-500 mb-2 font-semibold">Acceso Rápido Demo (1 Clic):</p>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <button onclick="fastLogin('admin', 'admin')" class="bg-amber-100 text-cafe py-1.5 rounded font-semibold hover:bg-amber-200">👑 Admin</button>
+                    <button onclick="fastLogin('vendedor', 'Vendedor123!')" class="bg-blue-100 text-blue-800 py-1.5 rounded font-semibold hover:bg-blue-200">💼 Vendedor</button>
+                    <button onclick="fastLogin('cocina', 'Cocina123!')" class="bg-orange-100 text-orange-800 py-1.5 rounded font-semibold hover:bg-orange-200">👨‍🍳 Cocina</button>
+                    <button onclick="fastLogin('cliente', 'Cliente123!')" class="bg-green-100 text-green-800 py-1.5 rounded font-semibold hover:bg-green-200">🛍️ Cliente</button>
+                </div>
+            </div>
+            <p id="loginError" class="text-xs text-red-600 mt-3 hidden"></p>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

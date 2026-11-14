@@ -6,8 +6,9 @@ from django.db.models import F, Q
 from django.utils import timezone
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from apps.catalogo.models import Insumo, Receta, RecetaInsumo
 from apps.catalogo.serializers import (
@@ -176,3 +177,19 @@ class RecetaViewSet(viewsets.ModelViewSet):
                 "precio_sugerido": str(precio_sugerido),
             }
         )
+
+
+class CatalogoPublicoAPIView(APIView):
+    """
+    Endpoint público de solo lectura para que el Frontend desacoplado
+    (S3 / EC2 Frontend / React / Tailwind) liste el catálogo sin requerir login previo.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        qs = Receta.objects.filter(activo=True).order_by("categoria", "nombre")
+        categoria = request.query_params.get("categoria")
+        if categoria:
+            qs = qs.filter(categoria=categoria)
+        serializer = RecetaListSerializer(qs, many=True, context={"request": request})
+        return Response(serializer.data)

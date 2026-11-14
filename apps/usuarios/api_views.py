@@ -3,6 +3,7 @@ Vistas API para autenticación y perfil de usuario.
 """
 from django.contrib.auth import authenticate, login, logout
 from rest_framework import status
+from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -34,9 +35,11 @@ class LoginAPIView(APIView):
             )
 
         login(request, user)
+        token, _ = Token.objects.get_or_create(user=user)
         return Response(
             {
                 "detail": "Inicio de sesión exitoso.",
+                "token": token.key,
                 "usuario": UsuarioSerializer(user).data,
             },
             status=status.HTTP_200_OK,
@@ -47,6 +50,9 @@ class LogoutAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        # Eliminar token DRF si el cliente se autenticó vía Token (Frontend desacoplado)
+        if hasattr(request.user, "auth_token"):
+            request.user.auth_token.delete()
         logout(request)
         return Response({"detail": "Sesión cerrada exitosamente."}, status=status.HTTP_200_OK)
 
