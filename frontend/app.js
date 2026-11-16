@@ -6,7 +6,7 @@
 'use strict';
 
 let API_BASE = localStorage.getItem('dulcearte_api_url') || 'http://32.196.211.81/api';
-let LAMBDA_URL = localStorage.getItem('dulcearte_lambda_url') || '';
+let LAMBDA_URL = localStorage.getItem('dulcearte_lambda_url') || 'https://wsa4lyofyakp3pxazuyg55d7fm0zpsaf.lambda-url.us-east-1.on.aws/';
 let AUTH_TOKEN = localStorage.getItem('dulcearte_token') || '';
 let USER_INFO = JSON.parse(localStorage.getItem('dulcearte_user') || 'null');
 let CATALOGO_DATA = [];
