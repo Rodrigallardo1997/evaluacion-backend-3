@@ -6,7 +6,7 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from apps.catalogo.api_views import InsumoViewSet, RecetaViewSet, CatalogoPublicoAPIView
-from apps.dashboard.api_views import DashboardResumenAPIView, ReporteVentasAPIView
+from apps.dashboard.api_views import DashboardResumenAPIView, ReporteVentasAPIView, MensajeriaLambdaSNSAPIView
 from apps.despachos.api_views import RutaDespachoViewSet, DespachoViewSet
 from apps.pedidos.api_views import ClienteViewSet, PedidoViewSet
 from apps.usuarios.api_views import LoginAPIView, LogoutAPIView, MeAPIView
@@ -32,6 +32,8 @@ urlpatterns = [
     path("auth/me/", MeAPIView.as_view(), name="api-me"),
     # Catálogo público (Frontend desacoplado)
     path("catalogo-publico/", CatalogoPublicoAPIView.as_view(), name="api-catalogo-publico"),
+    # Mensajería Serverless hacia AWS Lambda -> SNS
+    path("mensajeria-sns/", MensajeriaLambdaSNSAPIView.as_view(), name="api-mensajeria-sns"),
     # Dashboard & Reportes
     path("dashboard/resumen/", DashboardResumenAPIView.as_view(), name="api-dashboard-resumen"),
     path("reportes/ventas/", ReporteVentasAPIView.as_view(), name="api-reportes-ventas"),

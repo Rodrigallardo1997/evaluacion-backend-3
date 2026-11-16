@@ -1,11 +1,13 @@
 """
 Vistas API para KPIs del Dashboard y Reportes de Ventas.
 """
+import json
+import urllib.request
 from decimal import Decimal
 from django.db.models import Sum, Count, F, Q
 from django.utils import timezone
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -128,3 +130,39 @@ class ReporteVentasAPIView(APIView):
                 "top_productos": list(top_productos),
             }
         )
+
+
+class MensajeriaLambdaSNSAPIView(APIView):
+    """
+    Puente API para invocar la función AWS Lambda de mensajería unificada (dulcearte-mensajeria-sns)
+    evitando bloqueos CORS del navegador cuando se invoca desde el Frontend S3 a través de API Gateway.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        lambda_url = request.data.get(
+            "lambda_url",
+            "https://wsa4lyofyakp3pxazuyg55d7fm0zpsaf.lambda-url.us-east-1.on.aws/",
+        )
+        if not str(lambda_url).startswith("https://"):
+            return Response({"ok": False, "error": "URL de Lambda inválida."}, status=status.HTTP_400_BAD_REQUEST)
+
+        payload = {
+            "origen": request.data.get("origen", "frontend"),
+            "tipo": request.data.get("tipo", "CONTACTO_WEB"),
+            "remitente": request.data.get("remitente", "Usuario Web"),
+            "asunto": request.data.get("asunto", "Notificación Dulce Arte"),
+            "mensaje": request.data.get("mensaje", ""),
+        }
+        try:
+            req = urllib.request.Request(
+                lambda_url,
+                data=json.dumps(payload).encode("utf-8"),
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=10) as resp:  # nosec B310
+                resp_data = json.loads(resp.read().decode("utf-8"))
+                return Response(resp_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"ok": False, "error": str(e)}, status=status.HTTP_502_BAD_GATEWAY)

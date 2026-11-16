@@ -217,13 +217,20 @@ async function enviarMensajeLambda(e) {
 
     resEl.innerHTML = `<span class="text-gray-600">Enviando evento a AWS Lambda...</span>`;
     try {
-        const res = await fetch(LAMBDA_URL, {
+        const res = await fetch(`${API_BASE}/mensajeria-sns/`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ origen: 'frontend', tipo: 'CONTACTO_WEB', remitente, asunto, mensaje }),
+            body: JSON.stringify({
+                lambda_url: LAMBDA_URL,
+                origen: 'frontend',
+                tipo: 'CONTACTO_WEB',
+                remitente,
+                asunto,
+                mensaje
+            }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+        if (!res.ok || data.ok === false) throw new Error(data.error || `HTTP ${res.status}`);
         resEl.innerHTML = `<span class="text-green-700 font-semibold">✅ Notificación enviada vía Lambda ➔ SNS (ID: ${data.message_id || 'OK'})</span>`;
         e.target.reset();
     } catch (err) {
