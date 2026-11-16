@@ -132,3 +132,17 @@ Ubicación: `deploy/lambda_backup_rds.py` y `apps/dashboard/services/alertas_sns
 * **AWS SNS en Django (`alertas_sns.py`):**
   * Emite alertas operacionales ante **Stock Crítico de Insumos** (ej. cuando la harina o el chocolate caen bajo el stock mínimo).
   * Emite alertas inmediatas a cocina cuando un pedido pasa a estado **CONFIRMADO**.
+
+---
+
+## 7. Inventario Oficial de Recursos Reales Desplegados en AWS (`us-east-1`)
+
+| Capa / Servicio AWS | Identificador / Recurso Real | Endpoint / ARN en Producción |
+| :--- | :--- | :--- |
+| **1. Frontend Desacoplado (AWS S3)** | Bucket: `dulcearte-rodrigo-frontend-2026` | `http://dulcearte-rodrigo-frontend-2026.s3-website-us-east-1.amazonaws.com/` |
+| **2. API Gateway + Rate Limit** | API HTTP: `dulcearte-api-gateway` (`mczus55xzk`) — Rate: 5 req/s, Burst: 10 | `https://mczus55xzk.execute-api.us-east-1.amazonaws.com` |
+| **3. Backend API (AWS EC2)** | Instancia: `i-032ae52e44451e786` (Ubuntu 24.04 + Docker + Gunicorn + Nginx) | `http://32.196.211.81/` / `https://dulce-arte.duckdns.org/` |
+| **4. Base de Datos (AWS RDS)** | Instancia: `dulcearte-rds` (PostgreSQL 18.3, `db.t4g.micro`, DB: `dulcearte_db`) | `dulcearte-rds.c43gvqb84zoi.us-east-1.rds.amazonaws.com:5432` |
+| **5. Mensajería Serverless (Lambda)** | Función: `dulcearte-mensajeria-sns` (Python 3.12, `LabRole`, CORS activo) | `https://wsa4lyofyakp3pxazuyg55d7fm0zpsaf.lambda-url.us-east-1.on.aws/` |
+| **6. Alertas por Correo (AWS SNS)** | Tópico: `dulcearte-alertas-sns` (Suscriptor: `rodrigo.gallardo39@inacapmail.cl`) | `arn:aws:sns:us-east-1:596205176716:dulcearte-alertas-sns` |
+| **7. Respaldos Automáticos (Lambda + EventBridge + S3)** | Función: `dulcearte-respaldos-s3` + Regla: `respaldo-diario-dulcearte` (`rate(1 day)`) | Bucket: `s3://dulcearte-rodrigo-respaldos-2026-596205176716-us-east-1-an/` |
