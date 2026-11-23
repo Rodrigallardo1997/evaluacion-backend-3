@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     # Paquetes y librerías de terceros
     'rest_framework',
     'rest_framework.authtoken',
+    'rest_framework_simplejwt',
     'corsheaders',
     'drf_spectacular',
     'storages',
@@ -200,10 +201,13 @@ CORS_ALLOW_CREDENTIALS = True
 
 # ---------------------------------------------------------------------------
 # Configuración de Django REST Framework (DRF)
-# Incluye Autenticación por Token (Frontend desacoplado) y Rate Limiting (DoS)
+# Incluye Autenticación JWT (Evaluación N°4), Token y Rate Limiting (DoS)
 # ---------------------------------------------------------------------------
+from datetime import timedelta
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
@@ -222,6 +226,18 @@ REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
+}
+
+# ---------------------------------------------------------------------------
+# Configuración de JSON Web Token (JWT - SimpleJWT)
+# ---------------------------------------------------------------------------
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=4),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ROTATE_REFRESH_TOKENS': False,
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
 # ---------------------------------------------------------------------------

@@ -7,6 +7,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.usuarios.serializers import UsuarioSerializer, LoginSerializer
 
@@ -36,9 +37,15 @@ class LoginAPIView(APIView):
 
         login(request, user)
         token, _ = Token.objects.get_or_create(user=user)
+        refresh = RefreshToken.for_user(user)
+        refresh["username"] = user.username
+        refresh["rol"] = user.rol
+
         return Response(
             {
                 "detail": "Inicio de sesión exitoso.",
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
                 "token": token.key,
                 "usuario": UsuarioSerializer(user).data,
             },

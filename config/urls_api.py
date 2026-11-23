@@ -4,6 +4,11 @@ Mapea exactamente los endpoints especificados en la sección 10 de la rúbrica.
 """
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+    TokenVerifyView,
+)
 
 from apps.catalogo.api_views import InsumoViewSet, RecetaViewSet, CatalogoPublicoAPIView
 from apps.dashboard.api_views import DashboardResumenAPIView, ReporteVentasAPIView, MensajeriaLambdaSNSAPIView
@@ -26,10 +31,13 @@ router.register(r"rutas", RutaDespachoViewSet, basename="ruta")
 router.register(r"despachos", DespachoViewSet, basename="despacho")
 
 urlpatterns = [
-    # Auth
+    # Auth & JWT (JSON Web Token - Evaluación N°4)
     path("auth/login/", LoginAPIView.as_view(), name="api-login"),
     path("auth/logout/", LogoutAPIView.as_view(), name="api-logout"),
     path("auth/me/", MeAPIView.as_view(), name="api-me"),
+    path("auth/jwt/create/", TokenObtainPairView.as_view(), name="jwt-obtain-pair"),
+    path("auth/jwt/refresh/", TokenRefreshView.as_view(), name="jwt-refresh"),
+    path("auth/jwt/verify/", TokenVerifyView.as_view(), name="jwt-verify"),
     # Catálogo público (Frontend desacoplado)
     path("catalogo-publico/", CatalogoPublicoAPIView.as_view(), name="api-catalogo-publico"),
     # Mensajería Serverless hacia AWS Lambda -> SNS
