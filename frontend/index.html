@@ -37,7 +37,8 @@
 
         .landing-nav .nav-link {
             color: rgba(255, 255, 255, 0.85) !important;
-            font-size: 0.92rem;
+            font-size: 0.88rem;
+            white-space: nowrap;
             transition: all 0.2s;
         }
 
@@ -150,6 +151,17 @@
             transform: translateY(-3px);
         }
 
+        .kpi-icon-circle {
+            width: 56px;
+            height: 56px;
+            min-width: 56px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
         /* Badges de estado de alto contraste (EVA-3) */
         .badge-estado-borrador          { background-color: #6c757d; color: #fff; }
         .badge-estado-cotizado          { background-color: #e0f2fe; color: #0369a1; border: 1px solid #7dd3fc; }
@@ -216,17 +228,17 @@
                 </li>
             </ul>
 
-            <div class="d-flex align-items-center gap-2 flex-wrap">
-                <span id="userBadge" class="d-none badge bg-light text-dark px-3 py-2 small shadow-sm"></span>
+            <div class="d-flex align-items-center gap-2 flex-nowrap">
+                <span id="userBadge" class="d-none badge bg-light text-dark px-3 py-2 small shadow-sm text-nowrap"></span>
 
-                <button id="btnOpenLogin" type="button" class="btn btn-outline-light fw-semibold px-3 btn-sm" data-bs-toggle="modal" data-bs-target="#modalLogin">
+                <button id="btnOpenLogin" type="button" class="btn btn-outline-light fw-semibold px-3 btn-sm text-nowrap" data-bs-toggle="modal" data-bs-target="#modalLogin">
                     <i class="bi bi-box-arrow-in-right me-1"></i>Iniciar Sesión
                 </button>
-                <button id="btnFastAccess" type="button" class="btn btn-warning fw-bold px-3 btn-sm shadow-sm text-dark" data-bs-toggle="modal" data-bs-target="#modalLogin">
+                <button id="btnFastAccess" type="button" class="btn btn-warning fw-bold px-3 btn-sm shadow-sm text-dark text-nowrap" data-bs-toggle="modal" data-bs-target="#modalLogin">
                     <i class="bi bi-lightning-charge-fill me-1"></i>Accesos Demo
                 </button>
 
-                <button id="btnLogout" type="button" onclick="cerrarSesion()" class="d-none btn btn-outline-light btn-sm" title="Cerrar sesión">
+                <button id="btnLogout" type="button" onclick="cerrarSesion()" class="d-none btn btn-outline-light btn-sm text-nowrap" title="Cerrar sesión">
                     <i class="bi bi-box-arrow-right me-1"></i>Salir
                 </button>
             </div>
@@ -322,7 +334,7 @@
             <div class="col-sm-6 col-xl-3">
                 <div class="card border-0 shadow-sm h-100 card-kpi">
                     <div class="card-body d-flex align-items-center gap-3">
-                        <div class="rounded-circle p-3 bg-warning bg-opacity-15">
+                        <div class="kpi-icon-circle bg-warning bg-opacity-10">
                             <i class="bi bi-hourglass-split fs-3 text-warning"></i>
                         </div>
                         <div>
@@ -341,7 +353,7 @@
             <div class="col-sm-6 col-xl-3">
                 <div class="card border-0 shadow-sm h-100 card-kpi">
                     <div class="card-body d-flex align-items-center gap-3">
-                        <div class="rounded-circle p-3 bg-primary bg-opacity-15">
+                        <div class="kpi-icon-circle bg-primary bg-opacity-10">
                             <i class="bi bi-fire fs-3 text-primary"></i>
                         </div>
                         <div>
@@ -360,7 +372,7 @@
             <div class="col-sm-6 col-xl-3">
                 <div class="card border-0 shadow-sm h-100 card-kpi">
                     <div class="card-body d-flex align-items-center gap-3">
-                        <div class="rounded-circle p-3 bg-success bg-opacity-15">
+                        <div class="kpi-icon-circle bg-success bg-opacity-10">
                             <i class="bi bi-check2-circle fs-3 text-success"></i>
                         </div>
                         <div>
@@ -379,7 +391,7 @@
             <div class="col-sm-6 col-xl-3">
                 <div class="card border-0 shadow-sm h-100 card-kpi">
                     <div class="card-body d-flex align-items-center gap-3">
-                        <div class="rounded-circle p-3 bg-opacity-25" style="background-color: #F4A7B9;">
+                        <div class="kpi-icon-circle" style="background-color: rgba(244, 167, 185, 0.3);">
                             <i class="bi bi-truck fs-3 text-dulce-cafe"></i>
                         </div>
                         <div>
