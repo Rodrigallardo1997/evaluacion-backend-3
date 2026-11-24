@@ -23,6 +23,7 @@ from apps.pedidos.services.cotizacion_service import (
 )
 from apps.usuarios.models import Usuario
 from apps.usuarios.permissions import role_required
+from apps.dashboard.services.alertas_sns import notificar_nuevo_pedido, notificar_pedido_confirmado
 
 
 # ======================================================================
@@ -194,18 +195,20 @@ def pedido_nuevo(request):
                     pedido.recalcular_totales()
                     pedido.save(update_fields=["subtotal", "total", "saldo"])
 
-                    if es_cliente:
-                        messages.success(
-                            request,
-                            f"¡Tu solicitud de pedido {pedido.codigo} fue enviada con éxito! Nuestro equipo de pastelería ya lo tiene registrado.",
-                        )
-                        return redirect("pedidos:mis_pedidos")
-                    else:
-                        messages.success(
-                            request,
-                            f"Pedido {pedido.codigo} registrado exitosamente como BORRADOR. Puede proceder a cotizar.",
-                        )
-                        return redirect("pedidos:detalle", pk=pedido.pk)
+                notificar_nuevo_pedido(pedido)
+
+                if es_cliente:
+                    messages.success(
+                        request,
+                        f"¡Tu solicitud de pedido {pedido.codigo} fue enviada con éxito! Nuestro equipo de pastelería ya lo tiene registrado.",
+                    )
+                    return redirect("pedidos:mis_pedidos")
+                else:
+                    messages.success(
+                        request,
+                        f"Pedido {pedido.codigo} registrado exitosamente como BORRADOR. Puede proceder a cotizar.",
+                    )
+                    return redirect("pedidos:detalle", pk=pedido.pk)
     else:
         form = PedidoForm(es_cliente=es_cliente)
 

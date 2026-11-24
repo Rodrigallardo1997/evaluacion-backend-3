@@ -19,6 +19,7 @@ from apps.catalogo.serializers import (
     RecetaInsumoSerializer,
 )
 from apps.inventario.services.stock_service import registrar_movimiento
+from apps.dashboard.services.alertas_sns import notificar_nueva_receta
 from apps.usuarios.permissions import RolePermission
 
 
@@ -135,6 +136,14 @@ class RecetaViewSet(viewsets.ModelViewSet):
         if self.action in ["retrieve", "update", "partial_update"]:
             return RecetaDetailSerializer
         return RecetaListSerializer
+
+    def perform_create(self, serializer):
+        receta = serializer.save()
+        notificar_nueva_receta(receta, accion="CREADA")
+
+    def perform_update(self, serializer):
+        receta = serializer.save()
+        notificar_nueva_receta(receta, accion="ACTUALIZADA")
 
     def get_queryset(self):
         qs = super().get_queryset()

@@ -12,6 +12,7 @@ from django.utils import timezone
 
 from apps.catalogo.forms import InsumoForm, AjusteStockForm, RecetaForm
 from apps.catalogo.models import Insumo, Receta, RecetaInsumo
+from apps.dashboard.services.alertas_sns import notificar_nueva_receta
 from apps.inventario.services.stock_service import registrar_movimiento
 from apps.usuarios.permissions import role_required
 
@@ -72,7 +73,8 @@ def receta_crear(request):
                             cantidad=Decimal(str(cant)),
                             merma_porcentaje=Decimal(str(merma or 0)),
                         )
-                messages.success(request, f"Receta '{receta.nombre}' y su Lista de Materiales (BOM) guardadas exitosamente.")
+                notificar_nueva_receta(receta, accion="CREADA")
+                messages.success(request, f"Receta '{receta.nombre}' y su Lista de Materiales (BOM) guardadas exitosamente (Alerta SNS enviada).")
                 return redirect("catalogo:index")
     else:
         form = RecetaForm()

@@ -1,68 +1,104 @@
 """
-Servicio de Mensajería y Alertas en la Nube con AWS SNS (Simple Notification Service).
-Permite notificar eventos operacionales críticos (stock bajo, pedidos confirmados, rutas de despacho).
+Servicio de Mensajería y Alertas en la Nube con AWS Lambda + AWS SNS.
+Permite que tanto el Backend (Django) como el Frontend envíen notificaciones por correo
+a través de la función Serverless 'dulcearte-mensajeria-sns' conectada al tópico SNS.
 """
+import json
 import logging
+import sys
+import urllib.request
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_LAMBDA_SNS_URL = "https://wsa4lyofyakp3pxazuyg55d7fm0zpsaf.lambda-url.us-east-1.on.aws/"
 
-def emitir_alerta_sns(asunto: str, mensaje: str) -> bool:
+
+def emitir_alerta_sns(asunto: str, mensaje: str, tipo: str = "OPERACION_BACKEND") -> bool:
     """
-    Publica un mensaje en el tópico de AWS SNS configurado en las variables de entorno.
-    Si AWS SNS no está activo o no hay credenciales, registra el evento en el log sin romper la app.
+    Envía un evento a la función AWS Lambda (dulcearte-mensajeria-sns),
+    la cual publica el correo en el tópico AWS SNS (dulcearte-alertas-sns).
+    Durante la ejecución de tests unitarios ('manage.py test') omite la llamada HTTP externa.
     """
-    topic_arn = getattr(settings, "AWS_SNS_TOPIC_ARN", None)
-    
-    if not topic_arn:
-        logger.info(f"[SIMULACIÓN SNS] Asunto: {asunto} | Mensaje: {mensaje}")
+    if "test" in sys.argv:
         return True
 
-    try:
-        import boto3
-        sns_client = boto3.client(
-            "sns",
-            region_name=getattr(settings, "AWS_S3_REGION_NAME", "us-east-1"),
-            aws_access_key_id=getattr(settings, "AWS_ACCESS_KEY_ID", None),
-            aws_secret_access_key=getattr(settings, "AWS_SECRET_ACCESS_KEY", None),
-        )
-        response = sns_client.publish(
-            TopicArn=topic_arn,
-            Subject=asunto[:100],  # Límite de 100 caracteres para asunto SNS
-            Message=mensaje,
-        )
-        logger.info(f"[OK AWS SNS] Mensaje publicado con MessageId: {response.get('MessageId')}")
-        return True
-    except Exception as e:
-        logger.error(f"[ERROR AWS SNS] No se pudo emitir la notificación: {str(e)}")
+    lambda_url = getattr(settings, "AWS_LAMBDA_SNS_URL", DEFAULT_LAMBDA_SNS_URL)
+    if not str(lambda_url).startswith("https://"):
         return False
+
+    payload = {
+        "origen": "backend",
+        "tipo": tipo,
+        "remitente": "Backend Django DRF (AWS EC2 + RDS)",
+        "asunto": asunto[:90],
+        "mensaje": mensaje,
+    }
+    try:
+        req = urllib.request.Request(
+            lambda_url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=4) as resp:  # nosec B310
+            data = json.loads(resp.read().decode("utf-8"))
+            logger.info(f"[OK Lambda->SNS] Alerta enviada. MessageId: {data.get('message_id')}")
+            return True
+    except Exception as e:
+        logger.warning(f"[WARN Lambda->SNS] No se pudo enviar alerta externa: {str(e)}")
+        return False
+
+
+def notificar_nuevo_pedido(pedido) -> bool:
+    """Dispara correo vía Lambda -> SNS cada vez que se crea un nuevo pedido en RDS."""
+    cliente_nombre = getattr(pedido.cliente, "nombre_completo", str(pedido.cliente))
+    asunto = f"Nuevo Pedido Creado: {pedido.codigo}"
+    mensaje = (
+        f"Se ha registrado un nuevo pedido en la base de datos AWS RDS PostgreSQL:\n\n"
+        f"- Codigo de Orden : {pedido.codigo}\n"
+        f"- Cliente         : {cliente_nombre}\n"
+        f"- Estado Inicial  : {pedido.get_estado_display()}\n"
+        f"- Total Estimado  : ${pedido.total:,.0f} CLP\n"
+        f"- Prioridad       : {pedido.get_prioridad_display()}\n"
+    )
+    return emitir_alerta_sns(asunto, mensaje, tipo="NUEVO_PEDIDO_RDS")
+
+
+def notificar_nueva_receta(receta, accion: str = "CREADA") -> bool:
+    """Dispara correo vía Lambda -> SNS cada vez que se crea o actualiza un producto/receta en RDS."""
+    asunto = f"Receta {accion} en Catalogo: {receta.nombre}"
+    mensaje = (
+        f"Operacion CRUD persistida en AWS RDS PostgreSQL:\n\n"
+        f"- Accion          : {accion}\n"
+        f"- ID Producto     : #{receta.id}\n"
+        f"- Nombre          : {receta.nombre}\n"
+        f"- Categoria       : {receta.get_categoria_display()}\n"
+        f"- Precio Base     : ${receta.precio_base:,.0f} CLP\n"
+        f"- Tiempo Prep.    : {receta.tiempo_preparacion_min} min\n"
+    )
+    return emitir_alerta_sns(asunto, mensaje, tipo=f"CRUD_RECETA_{accion}")
 
 
 def notificar_stock_critico(insumo) -> bool:
     """Emite una alerta cuando un insumo cae por debajo del umbral mínimo."""
-    asunto = f"⚠️ [ALERTA STOCK] Insumo Crítico: {insumo.nombre}"
+    asunto = f"Alerta Stock Critico: {insumo.nombre}"
     mensaje = (
-        f"Alerta de inventario en Pastelería Dulce Arte:\n\n"
-        f"• Insumo: {insumo.nombre}\n"
-        f"• Categoría: {insumo.get_categoria_display()}\n"
-        f"• Stock Actual: {insumo.stock_actual} {insumo.unidad}\n"
-        f"• Stock Mínimo Requerido: {insumo.stock_minimo} {insumo.unidad}\n\n"
-        f"Acción requerida: Generar orden de compra a proveedores a la brevedad."
+        f"Alerta de inventario en Pasteleria Dulce Arte:\n\n"
+        f"- Insumo          : {insumo.nombre}\n"
+        f"- Stock Actual    : {insumo.stock_actual} {insumo.unidad}\n"
+        f"- Stock Minimo    : {insumo.stock_minimo} {insumo.unidad}\n"
     )
-    return emitir_alerta_sns(asunto, mensaje)
+    return emitir_alerta_sns(asunto, mensaje, tipo="ALERTA_STOCK")
 
 
 def notificar_pedido_confirmado(pedido) -> bool:
     """Emite una alerta a cocina cuando un pedido pasa a estado CONFIRMADO."""
-    asunto = f"🎂 [NUEVO PEDIDO] Orden {pedido.codigo} Confirmada"
+    asunto = f"Pedido Confirmado a Cocina: {pedido.codigo}"
     mensaje = (
-        f"Nuevo pedido confirmado para elaboración en cocina:\n\n"
-        f"• Código: {pedido.codigo}\n"
-        f"• Cliente: {pedido.cliente.nombre_completo}\n"
-        f"• Fecha de Entrega: {pedido.fecha_entrega.strftime('%d-%m-%Y %H:%M')}\n"
-        f"• Total: ${pedido.total:,.0f} CLP (Anticipo 50% recibido)\n"
-        f"• Prioridad: {pedido.get_prioridad_display()}\n\n"
-        f"El pedido ha ingresado automáticamente al Tablero Kanban de cocina."
+        f"Nuevo pedido confirmado para elaboracion en Tablero Kanban:\n\n"
+        f"- Codigo          : {pedido.codigo}\n"
+        f"- Cliente         : {pedido.cliente.nombre_completo}\n"
+        f"- Total           : ${pedido.total:,.0f} CLP\n"
     )
-    return emitir_alerta_sns(asunto, mensaje)
+    return emitir_alerta_sns(asunto, mensaje, tipo="PEDIDO_CONFIRMADO")
