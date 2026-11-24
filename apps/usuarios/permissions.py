@@ -2,7 +2,7 @@
 Permisos y autorización por roles para vistas web y Django REST Framework.
 """
 from functools import wraps
-from typing import List, Tuple
+from typing import List
 
 from django.contrib.auth.mixins import AccessMixin
 from django.core.exceptions import PermissionDenied
@@ -78,8 +78,9 @@ class RolePermission(permissions.BasePermission):
         action = getattr(view, "action", request.method.lower())
         allowed_roles = role_map.get(action, role_map.get("default", []))
 
+        # Política Fail-Closed: si la acción no está autorizada explícitamente, denegar acceso
         if not allowed_roles:
-            return True
+            return False
 
         return request.user.rol in allowed_roles
 

@@ -37,6 +37,15 @@ function getAuthHeader() {
     return {};
 }
 
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 function mostrarAlerta(texto) {
     const el = document.getElementById('alertaFlotante');
     const txt = document.getElementById('alertaFlotanteTexto');
@@ -174,10 +183,10 @@ function renderCatalogo() {
         <div class="col-md-6 col-lg-3">
             <div class="receta-card">
                 <div class="receta-img-container">
-                    <img src="${imgUrl}" class="receta-img" alt="${r.nombre}">
+                    <img src="${escapeHtml(imgUrl)}" class="receta-img" alt="${escapeHtml(r.nombre)}">
                     <div class="position-absolute top-0 end-0 m-2">
                         <span class="badge bg-white text-dark shadow-sm border small">
-                            <i class="bi bi-clock me-1 text-warning"></i>${r.tiempo_preparacion_min} min
+                            <i class="bi bi-clock me-1 text-warning"></i>${Number(r.tiempo_preparacion_min)} min
                         </span>
                     </div>
                 </div>
@@ -185,13 +194,13 @@ function renderCatalogo() {
                 <div class="p-3 d-flex flex-column flex-grow-1">
                     <div class="mb-2">
                         <span class="badge px-2 py-1 small" style="background-color: var(--dulce-crema); color: var(--dulce-cafe); border: 1px solid rgba(107,66,38,0.2);">
-                            ${catLabel}
+                            ${escapeHtml(catLabel)}
                         </span>
                     </div>
 
-                    <h3 class="h6 fw-bold text-dark mb-1" style="min-height: 38px;">${r.nombre}</h3>
+                    <h3 class="h6 fw-bold text-dark mb-1" style="min-height: 38px;">${escapeHtml(r.nombre)}</h3>
                     <p class="text-muted small mb-3 flex-grow-1" style="font-size: 0.8rem; min-height: 48px;">
-                        ${r.descripcion || 'Elaboración artesanal con ingredientes seleccionados.'}
+                        ${escapeHtml(r.descripcion || 'Elaboración artesanal con ingredientes seleccionados.')}
                     </p>
 
                     <div class="border-top pt-2 mt-auto d-flex justify-content-between align-items-center">
@@ -348,7 +357,17 @@ async function iniciarSesion(e) {
     }
 }
 
-function cerrarSesion() {
+async function cerrarSesion() {
+    if (JWT_ACCESS || AUTH_TOKEN) {
+        try {
+            await fetch(`${API_BASE}/auth/logout/`, {
+                method: 'POST',
+                headers: { ...getAuthHeader() },
+            });
+        } catch {
+            // Limpiar sesión local aunque el servidor no responda
+        }
+    }
     JWT_ACCESS = '';
     JWT_REFRESH = '';
     AUTH_TOKEN = '';
@@ -372,7 +391,7 @@ function actualizarUIUsuario() {
     const jwtBox = document.getElementById('jwtTokenBox');
 
     if ((JWT_ACCESS || AUTH_TOKEN) && USER_INFO) {
-        badge.innerHTML = `<i class="bi bi-person-circle text-primary me-1"></i>${USER_INFO.username} (<strong>${USER_INFO.rol_display || USER_INFO.rol}</strong>)`;
+        badge.innerHTML = `<i class="bi bi-person-circle text-primary me-1"></i>${escapeHtml(USER_INFO.username)} (<strong>${escapeHtml(USER_INFO.rol_display || USER_INFO.rol)}</strong>)`;
         badge.classList.remove('d-none');
         btnIn.classList.add('d-none');
         btnFast.classList.add('d-none');
@@ -426,11 +445,11 @@ async function cargarPedidos() {
         tbody.innerHTML = lista.map(p => `
             <tr>
                 <td class="fw-bold font-monospace" style="color: var(--dulce-cafe);">
-                    <a href="http://32.196.211.81/pedidos/${p.id}/" class="text-decoration-none" style="color: var(--dulce-cafe);">${p.codigo}</a>
+                    <a href="http://32.196.211.81/pedidos/${Number(p.id)}/" class="text-decoration-none" style="color: var(--dulce-cafe);">${escapeHtml(p.codigo)}</a>
                 </td>
-                <td>${p.cliente_nombre || p.cliente}</td>
-                <td class="text-muted">${new Date(p.fecha_entrega).toLocaleDateString('es-CL')}</td>
-                <td><span class="badge bg-primary-subtle text-primary border px-2 py-1">${p.estado_display || p.estado}</span></td>
+                <td>${escapeHtml(p.cliente_nombre || p.cliente)}</td>
+                <td class="text-muted">${escapeHtml(new Date(p.fecha_entrega).toLocaleDateString('es-CL'))}</td>
+                <td><span class="badge bg-primary-subtle text-primary border px-2 py-1">${escapeHtml(p.estado_display || p.estado)}</span></td>
                 <td class="fw-bold">$${Number(p.total).toLocaleString('es-CL')}</td>
             </tr>
         `).join('');

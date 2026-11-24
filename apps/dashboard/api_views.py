@@ -2,19 +2,22 @@
 Vistas API para KPIs del Dashboard y Reportes de Ventas.
 """
 import json
+import logging
 import urllib.request
 from decimal import Decimal
-from django.db.models import Sum, Count, F, Q
+from django.conf import settings
+from django.db.models import Sum, Count, F
 from django.utils import timezone
 from rest_framework import status
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.catalogo.models import Insumo, Receta
-from apps.despachos.models import RutaDespacho, Despacho
+from apps.catalogo.models import Insumo
+from apps.despachos.models import RutaDespacho
 from apps.pedidos.models import Pedido, DetallePedido, Pago
-from apps.usuarios.permissions import role_required
+
+logger = logging.getLogger(__name__)
 
 
 class DashboardResumenAPIView(APIView):
@@ -134,25 +137,25 @@ class ReporteVentasAPIView(APIView):
 
 class MensajeriaLambdaSNSAPIView(APIView):
     """
-    Puente API para invocar la función AWS Lambda de mensajería unificada (dulcearte-mensajeria-sns)
-    evitando bloqueos CORS del navegador cuando se invoca desde el Frontend S3 a través de API Gateway.
+    Puente seguro para invocar la función AWS Lambda de mensajería (dulcearte-mensajeria-sns).
+    Requiere autenticación JWT/Token y lee la URL exclusivamente desde settings (mitigación SSRF).
     """
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        lambda_url = request.data.get(
-            "lambda_url",
-            "https://wsa4lyofyakp3pxazuyg55d7fm0zpsaf.lambda-url.us-east-1.on.aws/",
-        )
+        lambda_url = getattr(settings, "AWS_LAMBDA_SNS_URL", "")
         if not str(lambda_url).startswith("https://"):
-            return Response({"ok": False, "error": "URL de Lambda inválida."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"ok": False, "error": "Servicio de mensajería no configurado."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
 
         payload = {
-            "origen": request.data.get("origen", "frontend"),
-            "tipo": request.data.get("tipo", "CONTACTO_WEB"),
-            "remitente": request.data.get("remitente", "Usuario Web"),
-            "asunto": request.data.get("asunto", "Notificación Dulce Arte"),
-            "mensaje": request.data.get("mensaje", ""),
+            "origen": "frontend",
+            "tipo": str(request.data.get("tipo", "CONTACTO_WEB"))[:40],
+            "remitente": request.user.get_full_name() or request.user.username,
+            "asunto": str(request.data.get("asunto", "Notificación Dulce Arte"))[:100],
+            "mensaje": str(request.data.get("mensaje", ""))[:1000],
         }
         try:
             req = urllib.request.Request(
@@ -164,5 +167,9 @@ class MensajeriaLambdaSNSAPIView(APIView):
             with urllib.request.urlopen(req, timeout=10) as resp:  # nosec B310
                 resp_data = json.loads(resp.read().decode("utf-8"))
                 return Response(resp_data, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({"ok": False, "error": str(e)}, status=status.HTTP_502_BAD_GATEWAY)
+        except Exception as exc:
+            logger.error("Error invocando AWS Lambda SNS: %s", exc)
+            return Response(
+                {"ok": False, "error": "No fue posible procesar la notificación en este momento."},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )

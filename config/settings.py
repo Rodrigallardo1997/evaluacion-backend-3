@@ -1,8 +1,9 @@
 """
 Configuración principal de Django para el proyecto Dulce Arte.
-Evaluación Parcial N°3 - Desarrollo Backend.
+Evaluación N.º 4 - Programación Backend (Arquitectura AWS, JWT y Seguridad).
 Autor: Rodrigo Alejandro Gallardo Martínez.
 """
+from datetime import timedelta
 from pathlib import Path
 import environ
 
@@ -107,6 +108,14 @@ DATABASES = {
 # ---------------------------------------------------------------------------
 AUTH_USER_MODEL = 'usuarios.Usuario'
 
+# Configuración explícita de hashers criptográficos (PBKDF2-HMAC-SHA256 con 720.000 iteraciones + salt)
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+    'django.contrib.auth.hashers.Argon2PasswordHasher',
+    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+]
+
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -127,47 +136,50 @@ USE_I18N = True
 USE_TZ = True
 
 # ---------------------------------------------------------------------------
-# Archivos Estáticos y Multimedia (Soporte Dual: Local y AWS S3)
+# Archivos Estáticos y Multimedia (Django 5 STORAGES — Soporte Dual Local / AWS S3)
 # ---------------------------------------------------------------------------
 USE_S3 = env.bool('USE_S3', default=False)
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [BASE_DIR / 'static']
+MEDIA_ROOT = BASE_DIR / 'media'
 
 if USE_S3:
-    # Configuración de credenciales de AWS S3
     AWS_ACCESS_KEY_ID = env('AWS_ACCESS_KEY_ID', default='')
     AWS_SECRET_ACCESS_KEY = env('AWS_SECRET_ACCESS_KEY', default='')
-    AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME', default='dulcearte-media-bucket')
+    AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME', default='dulcearte-rodrigo-frontend-2026')
     AWS_S3_REGION_NAME = env('AWS_S3_REGION_NAME', default='us-east-1')
     AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
     AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
-    AWS_DEFAULT_ACL = 'public-read'
+    AWS_DEFAULT_ACL = None  # Compatible con S3 BucketOwnerEnforced (sin ACLs legadas)
 
-    # Almacenamiento multimedia remoto en S3 (Fotos de Tortas y Firmas)
-    DEFAULT_FILE_STORAGE = 'config.storage_backends.MediaStorage'
     MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
-
-    # Configuración de estáticos con fallback a WhiteNoise
     if env.bool('USE_S3_FOR_STATIC', default=False):
-        STATICFILES_STORAGE = 'config.storage_backends.StaticStorage'
         STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/static/'
+        _staticfiles_backend = 'config.storage_backends.StaticStorage'
     else:
         STATIC_URL = '/static/'
-        STATIC_ROOT = BASE_DIR / 'staticfiles'
-        STATICFILES_DIRS = [BASE_DIR / 'static']
-        STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+        _staticfiles_backend = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+    STORAGES = {
+        'default': {'BACKEND': 'config.storage_backends.MediaStorage'},
+        'staticfiles': {'BACKEND': _staticfiles_backend},
+    }
 else:
-    # Almacenamiento local para desarrollo y servidores independientes
     STATIC_URL = '/static/'
-    STATIC_ROOT = BASE_DIR / 'staticfiles'
-    STATICFILES_DIRS = [BASE_DIR / 'static']
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
     MEDIA_URL = '/media/'
-    MEDIA_ROOT = BASE_DIR / 'media'
+    STORAGES = {
+        'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+        'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage'},
+    }
 
 # ---------------------------------------------------------------------------
-# AWS SNS (Simple Notification Service) - Alertas y Mensajería Cloud
+# AWS SNS & Lambda (Alertas y Mensajería Serverless)
 # ---------------------------------------------------------------------------
-AWS_SNS_TOPIC_ARN = env('AWS_SNS_TOPIC_ARN', default='')
+AWS_SNS_TOPIC_ARN = env('AWS_SNS_TOPIC_ARN', default='arn:aws:sns:us-east-1:596205176716:dulcearte-alertas-sns')
+AWS_LAMBDA_SNS_URL = env(
+    'AWS_LAMBDA_SNS_URL',
+    default='https://wsa4lyofyakp3pxazuyg55d7fm0zpsaf.lambda-url.us-east-1.on.aws/',
+)
 
 # ---------------------------------------------------------------------------
 # Gestión de Sesiones de Usuario
@@ -187,30 +199,39 @@ ATOMIC_REQUESTS = False  # Usamos @transaction.atomic() explícito en servicios 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # ---------------------------------------------------------------------------
-# Cabeceras de Seguridad HTTP
+# Cabeceras de Seguridad HTTP y Proxy TLS
 # ---------------------------------------------------------------------------
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 X_FRAME_OPTIONS = 'DENY'
 SECURE_CONTENT_TYPE_NOSNIFF = True
 
 # ---------------------------------------------------------------------------
-# Configuración CORS (Cross-Origin Resource Sharing) para Frontend Desacoplado
-# Permite que el Frontend (S3 / EC2 Frontend / React / Tailwind) consuma la API
+# Configuración CORS Explícita (Sin Wildcard + Credenciales)
 # ---------------------------------------------------------------------------
-CORS_ALLOW_ALL_ORIGINS = env.bool('CORS_ALLOW_ALL_ORIGINS', default=True)
+CORS_ALLOW_ALL_ORIGINS = env.bool('CORS_ALLOW_ALL_ORIGINS', default=False)
+CORS_ALLOWED_ORIGINS = env.list(
+    'CORS_ALLOWED_ORIGINS',
+    default=[
+        'http://dulcearte-rodrigo-frontend-2026.s3-website-us-east-1.amazonaws.com',
+        'http://32.196.211.81',
+        'https://32.196.211.81',
+        'http://dulce-arte.duckdns.org',
+        'https://dulce-arte.duckdns.org',
+        'http://localhost:8000',
+        'http://127.0.0.1:8000',
+    ],
+)
 CORS_ALLOW_CREDENTIALS = True
 
 # ---------------------------------------------------------------------------
 # Configuración de Django REST Framework (DRF)
-# Incluye Autenticación JWT (Evaluación N°4), Token y Rate Limiting (DoS)
+# Incluye Autenticación JWT (Evaluación N°4), Token y Rate Limiting real (DoS)
 # ---------------------------------------------------------------------------
-from datetime import timedelta
-
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.BasicAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
@@ -218,10 +239,12 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',
         'rest_framework.throttling.UserRateThrottle',
+        'rest_framework.throttling.ScopedRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
         'anon': env('THROTTLE_ANON_RATE', default='60/minute'),
         'user': env('THROTTLE_USER_RATE', default='300/minute'),
+        'catalogo_publico': env('THROTTLE_CATALOGO_RATE', default='15/minute'),
     },
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
@@ -232,9 +255,9 @@ REST_FRAMEWORK = {
 # Configuración de JSON Web Token (JWT - SimpleJWT)
 # ---------------------------------------------------------------------------
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=4),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-    'ROTATE_REFRESH_TOKENS': False,
+    'ROTATE_REFRESH_TOKENS': True,
     'ALGORITHM': 'HS256',
     'SIGNING_KEY': SECRET_KEY,
     'AUTH_HEADER_TYPES': ('Bearer',),
@@ -245,8 +268,8 @@ SIMPLE_JWT = {
 # ---------------------------------------------------------------------------
 SPECTACULAR_SETTINGS = {
     'TITLE': 'Dulce Arte API',
-    'DESCRIPTION': 'API REST para el sistema de gestión de Dulce Arte — Proyecto EVA 3',
-    'VERSION': '1.0.0',
+    'DESCRIPTION': 'API RESTful para Dulce Arte — Evaluación N.º 4 (AWS, JWT y Seguridad)',
+    'VERSION': '2.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
     'COMPONENT_SPLIT_REQUEST': True,
 }

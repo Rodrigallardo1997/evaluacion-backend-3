@@ -15,7 +15,7 @@ RDS_INSTANCE_ID = os.environ.get('RDS_INSTANCE_ID', 'dulcearte-rds')
 
 
 def lambda_handler(event, context):
-    ahora = datetime.datetime.utcnow()
+    ahora = datetime.datetime.now(datetime.timezone.utc)
     fecha_str = ahora.strftime('%Y-%m-%d-%H-%M')
     snapshot_id = f"backup-dulcearte-{fecha_str}"
 

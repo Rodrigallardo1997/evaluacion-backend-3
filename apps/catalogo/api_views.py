@@ -2,21 +2,21 @@
 Vistas API para Insumos, Recetas y Lista de Materiales (BOM).
 """
 from decimal import Decimal
-from django.db.models import F, Q
+from django.db.models import F
 from django.utils import timezone
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
-from apps.catalogo.models import Insumo, Receta, RecetaInsumo
+from apps.catalogo.models import Insumo, Receta
 from apps.catalogo.serializers import (
     InsumoSerializer,
     AjusteInsumoSerializer,
     RecetaListSerializer,
     RecetaDetailSerializer,
-    RecetaInsumoSerializer,
 )
 from apps.inventario.services.stock_service import registrar_movimiento
 from apps.dashboard.services.alertas_sns import notificar_nueva_receta
@@ -190,24 +190,15 @@ class RecetaViewSet(viewsets.ModelViewSet):
 
 class CatalogoPublicoAPIView(APIView):
     """
-    Endpoint público de solo lectura para que el Frontend desacoplado
-    (S3 / EC2 Frontend / React / Tailwind) liste el catálogo sin requerir login previo.
-    Incluye control de ráfagas (Rate Limit / Throttling anti-DoS) ante ráfagas excesivas.
+    Endpoint público de solo lectura para que el Frontend desacoplado liste el catálogo.
+    Aplica Rate Limiting real mediante DRF ScopedRateThrottle (15 req/min por IP)
+    en conjunto con el Throttling perimetral de Amazon API Gateway.
     """
     permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "catalogo_publico"
 
     def get(self, request):
-        burst_idx = request.query_params.get("burst")
-        if burst_idx is not None:
-            try:
-                if int(burst_idx) >= 10:
-                    return Response(
-                        {"detail": "Rate Limit excedido (Mitigación DoS/DDoS activa). Solicitud bloqueada."},
-                        status=status.HTTP_429_TOO_MANY_REQUESTS,
-                    )
-            except ValueError:
-                pass
-
         qs = Receta.objects.filter(activo=True).order_by("categoria", "nombre")
         categoria = request.query_params.get("categoria")
         if categoria:
