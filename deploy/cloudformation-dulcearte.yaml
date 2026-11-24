@@ -1,0 +1,309 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Plantilla Oficial AWS CloudFormation (IaC) - Pasteleria Artesanal Dulce Arte (Evaluacion N4 Backend).
+  Despliega automaticamente: Buckets S3 (SSE-S3 y Block Public Access), API Gateway HTTP con Rate Limit
+  (Throttling), Topico SNS, Funciones Lambda (Mensajeria y Respaldos), EventBridge cada 7 horas y Alarma CloudWatch.
+  Compatible 100% con AWS Academy Learner Lab (utiliza LabRole existente).
+
+Parameters:
+  PrefijoProyecto:
+    Type: String
+    Default: dulcearte-iac
+    Description: Prefijo unico para los recursos creados por la pila CloudFormation.
+
+  BackendPublicIp:
+    Type: String
+    Default: 32.196.211.81
+    Description: IP Publica Elastica de la instancia EC2 Backend (Django REST Framework).
+
+  Ec2InstanceId:
+    Type: String
+    Default: i-032ae52e44451e786
+    Description: ID de la instancia EC2 monitoreada por CloudWatch.
+
+  RdsInstanceId:
+    Type: String
+    Default: dulcearte-rds
+    Description: Identificador de la instancia AWS RDS PostgreSQL a respaldar.
+
+  EmailNotificaciones:
+    Type: String
+    Default: rodrigo.gallardo39@inacapmail.cl
+    Description: Correo electronico que recibira las alertas de CloudWatch, Respaldos y Mensajeria via SNS.
+
+Resources:
+  # ============================================================================
+  # 1. BUCKET S3 PRIVADO PARA RESPALDOS AUTOMATICOS (SSE-S3 + BLOCK PUBLIC ACCESS)
+  # ============================================================================
+  BucketRespaldosS3:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${PrefijoProyecto}-respaldos-${AWS::AccountId}"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  # ============================================================================
+  # 2. BUCKET S3 PARA RECURSOS ESTATICOS Y FRONTEND WEB (SSE-S3)
+  # ============================================================================
+  BucketFrontendS3:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${PrefijoProyecto}-frontend-${AWS::AccountId}"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      WebsiteConfiguration:
+        IndexDocument: index.html
+
+  # ============================================================================
+  # 3. TOPICO AMAZON SNS Y SUSCRIPCION DE CORREO
+  # ============================================================================
+  TopicoAlertasSNS:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "${PrefijoProyecto}-alertas-sns"
+      DisplayName: DulceArte-Alertas
+
+  SuscripcionCorreoSNS:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref TopicoAlertasSNS
+      Protocol: email
+      Endpoint: !Ref EmailNotificaciones
+
+  # ============================================================================
+  # 4. FUNCION AWS LAMBDA: MENSAJERIA UNIFICADA (FRONTEND & BACKEND -> SNS)
+  # ============================================================================
+  LambdaMensajeriaSNS:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${PrefijoProyecto}-mensajeria-sns"
+      Runtime: python3.12
+      Handler: index.lambda_handler
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Timeout: 15
+      Environment:
+        Variables:
+          SNS_TOPIC_ARN: !Ref TopicoAlertasSNS
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import datetime
+          import boto3
+
+          sns_client = boto3.client('sns')
+          SNS_TOPIC_ARN = os.environ.get('SNS_TOPIC_ARN', '')
+
+          def lambda_handler(event, context):
+              http_method = event.get('requestContext', {}).get('http', {}).get('method') or event.get('httpMethod', 'POST')
+              if http_method == 'OPTIONS':
+                  return {'statusCode': 200, 'body': ''}
+              try:
+                  raw_body = event.get('body', event)
+                  body = json.loads(raw_body) if isinstance(raw_body, str) and raw_body.strip() else (raw_body or {})
+                  origen = body.get('origen', 'frontend').upper()
+                  asunto = body.get('asunto', f'[{origen}] Alerta Dulce Arte')
+                  contenido = body.get('mensaje', 'Notificacion enviada desde arquitectura Cloud.')
+                  fecha = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')
+                  msg = f"DULCE ARTE CLOUD ({origen})\nFecha: {fecha}\nMensaje: {contenido}"
+                  resp = sns_client.publish(TopicArn=SNS_TOPIC_ARN, Subject=f"[Dulce Arte] {asunto}"[:100], Message=msg)
+                  return {
+                      'statusCode': 200,
+                      'headers': {'Content-Type': 'application/json'},
+                      'body': json.dumps({'ok': True, 'message_id': resp.get('MessageId', '')})
+                  }
+              except Exception as e:
+                  return {
+                      'statusCode': 400,
+                      'headers': {'Content-Type': 'application/json'},
+                      'body': json.dumps({'ok': False, 'error': str(e)})
+                  }
+
+  LambdaMensajeriaUrl:
+    Type: AWS::Lambda::Url
+    Properties:
+      TargetFunctionArn: !GetAtt LambdaMensajeriaSNS.Arn
+      AuthType: NONE
+      Cors:
+        AllowOrigins:
+          - "*"
+        AllowMethods:
+          - POST
+        AllowHeaders:
+          - content-type
+          - authorization
+
+  LambdaMensajeriaUrlPermiso:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref LambdaMensajeriaSNS
+      Action: lambda:InvokeFunctionUrl
+      Principal: "*"
+      FunctionUrlAuthType: NONE
+
+  # ============================================================================
+  # 5. FUNCION AWS LAMBDA + EVENTBRIDGE: RESPALDOS AUTOMATICOS CADA 7 HORAS
+  # ============================================================================
+  LambdaRespaldosS3:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${PrefijoProyecto}-respaldos-s3"
+      Runtime: python3.12
+      Handler: index.lambda_handler
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Timeout: 30
+      Environment:
+        Variables:
+          S3_BACKUP_BUCKET: !Ref BucketRespaldosS3
+          SNS_TOPIC_ARN: !Ref TopicoAlertasSNS
+          RDS_INSTANCE_ID: !Ref RdsInstanceId
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import datetime
+          import boto3
+
+          s3_client = boto3.client('s3')
+          sns_client = boto3.client('sns')
+          rds_client = boto3.client('rds')
+
+          S3_BUCKET = os.environ.get('S3_BACKUP_BUCKET')
+          SNS_ARN = os.environ.get('SNS_TOPIC_ARN')
+          RDS_ID = os.environ.get('RDS_INSTANCE_ID')
+
+          def lambda_handler(event, context):
+              fecha_str = datetime.datetime.utcnow().strftime('%Y-%m-%d-%H-%M-%S')
+              snap_id = f"backup-dulcearte-{fecha_str}"
+              estado_rds = "SNAPSHOT_SOLICITADO"
+              try:
+                  rds_client.create_db_snapshot(DBSnapshotIdentifier=snap_id, DBInstanceIdentifier=RDS_ID)
+              except Exception as err:
+                  estado_rds = f"OMITIDO ({str(err)[:60]})"
+
+              s3_key = f"respaldos/backup_{fecha_str}.json"
+              payload = {"snapshot_id": snap_id, "rds": RDS_ID, "estado": estado_rds, "fecha_utc": fecha_str}
+              s3_client.put_object(Bucket=S3_BUCKET, Key=s3_key, Body=json.dumps(payload, indent=2), ContentType='application/json')
+              sns_resp = sns_client.publish(
+                  TopicArn=SNS_ARN,
+                  Subject=f"[Dulce Arte] Respaldo S3 Cada 7h ({fecha_str})",
+                  Message=f"Respaldo automatico guardado en s3://{S3_BUCKET}/{s3_key} | Estado RDS: {estado_rds}"
+              )
+              return {'statusCode': 200, 'body': json.dumps({'ok': True, 's3_key': s3_key, 'sns_id': sns_resp.get('MessageId')})}
+
+  ReglaRespaldoCada7Horas:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub "${PrefijoProyecto}-respaldo-cada-7-horas"
+      Description: Ejecuta el respaldo automatico de RDS hacia S3 exactamente cada 7 horas (Actividad 8).
+      ScheduleExpression: "rate(7 hours)"
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt LambdaRespaldosS3.Arn
+          Id: TargetLambdaRespaldos7h
+
+  PermisoEventBridgeRespaldos:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref LambdaRespaldosS3
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt ReglaRespaldoCada7Horas.Arn
+
+  # ============================================================================
+  # 6. AMAZON API GATEWAY (HTTP API) CON RATE LIMITING / THROTTLING
+  # ============================================================================
+  ApiGatewayHttp:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: !Sub "${PrefijoProyecto}-api-gateway"
+      ProtocolType: HTTP
+      CorsConfiguration:
+        AllowOrigins:
+          - "*"
+        AllowMethods:
+          - GET
+          - POST
+          - PUT
+          - PATCH
+          - DELETE
+          - OPTIONS
+        AllowHeaders:
+          - "*"
+
+  ApiGatewayIntegracionEc2:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref ApiGatewayHttp
+      IntegrationType: HTTP_PROXY
+      IntegrationMethod: ANY
+      IntegrationUri: !Sub "http://${BackendPublicIp}/{proxy}"
+      PayloadFormatVersion: "1.0"
+
+  ApiGatewayRutaProxy:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ApiGatewayHttp
+      RouteKey: "ANY /{proxy+}"
+      Target: !Sub "integrations/${ApiGatewayIntegracionEc2}"
+
+  ApiGatewayEtapaDefault:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref ApiGatewayHttp
+      StageName: "$default"
+      AutoDeploy: true
+      DefaultRouteSettings:
+        ThrottlingBurstLimit: 10
+        ThrottlingRateLimit: 5
+
+  # ============================================================================
+  # 7. ALARMA AMAZON CLOUDWATCH SOBRE CPU DE EC2 CONECTADA A SNS
+  # ============================================================================
+  AlarmaCpuAltaEc2:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${PrefijoProyecto}-Alarma-CPU-Alta-EC2"
+      AlarmDescription: Alerta cuando CPUUtilization de la instancia EC2 supera el 70% (Actividad 7).
+      Namespace: AWS/EC2
+      MetricName: CPUUtilization
+      Dimensions:
+        - Name: InstanceId
+          Value: !Ref Ec2InstanceId
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 70
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref TopicoAlertasSNS
+
+Outputs:
+  UrlApiGatewayConRateLimit:
+    Description: URL de invocacion del API Gateway con Rate Limit (5 req/s, Burst 10)
+    Value: !GetAtt ApiGatewayHttp.ApiEndpoint
+
+  UrlLambdaMensajeriaSNS:
+    Description: URL publica de la funcion Lambda de mensajeria conectada a SNS
+    Value: !GetAtt LambdaMensajeriaUrl.FunctionUrl
+
+  BucketRespaldosCifrado:
+    Description: Nombre del Bucket S3 privado con cifrado SSE-S3 para respaldos cada 7 horas
+    Value: !Ref BucketRespaldosS3
+
+  BucketFrontendEstatico:
+    Description: Nombre del Bucket S3 para archivos estaticos y frontend
+    Value: !Ref BucketFrontendS3
+
+  ArnTopicoSNS:
+    Description: ARN del Topico SNS para alarmas CloudWatch y respaldos
+    Value: !Ref TopicoAlertasSNS
