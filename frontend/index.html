@@ -17,7 +17,6 @@
             --dulce-cafe:        #6B4226;
             --dulce-cafe-oscuro: #4A2E1B;
             --dulce-dorado:      #D4AF37;
-            --dulce-dorado-dark: #b89726;
         }
 
         body {
@@ -25,6 +24,10 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: #333333;
         }
+
+        .text-dulce-cafe { color: var(--dulce-cafe) !important; }
+        .text-dulce-rosa { color: var(--dulce-rosa) !important; }
+        .border-dulce-rosa { border-color: var(--dulce-rosa) !important; }
 
         .landing-nav {
             background-color: var(--dulce-cafe-oscuro);
@@ -38,7 +41,7 @@
             transition: all 0.2s;
         }
 
-        .landing-nav .nav-link:hover {
+        .landing-nav .nav-link:hover, .landing-nav .nav-link.active {
             color: var(--dulce-dorado) !important;
         }
 
@@ -138,6 +141,27 @@
             color: #ffffff;
         }
 
+        .card-kpi {
+            border-radius: 1rem;
+            transition: transform 0.2s ease;
+        }
+
+        .card-kpi:hover {
+            transform: translateY(-3px);
+        }
+
+        /* Badges de estado de alto contraste (EVA-3) */
+        .badge-estado-borrador          { background-color: #6c757d; color: #fff; }
+        .badge-estado-cotizado          { background-color: #e0f2fe; color: #0369a1; border: 1px solid #7dd3fc; }
+        .badge-estado-confirmado        { background-color: #0d6efd; color: #fff; }
+        .badge-estado-en_preparacion    { background-color: #fd7e14; color: #fff; }
+        .badge-estado-horneado_decorado { background-color: #ffc107; color: #212529; }
+        .badge-estado-control_calidad   { background-color: #20c997; color: #fff; }
+        .badge-estado-listo             { background-color: #198754; color: #fff; }
+        .badge-estado-en_despacho       { background-color: #6f42c1; color: #fff; }
+        .badge-estado-entregado         { background-color: #146c43; color: #fff; }
+        .badge-estado-cancelado         { background-color: #dc3545; color: #fff; }
+
         .footer-landing {
             background-color: #ffffff;
             border-top: 1px solid rgba(107, 66, 38, 0.12);
@@ -151,11 +175,11 @@
 <!-- Navbar Superior Dulce Arte (Estilo EVA-3) -->
 <nav class="navbar navbar-expand-lg landing-nav sticky-top py-2">
     <div class="container">
-        <a class="navbar-brand d-flex align-items-center text-white" href="http://32.196.211.81/">
+        <a class="navbar-brand d-flex align-items-center text-white" href="#" onclick="irAVistaPrincipal(); return false;">
             <span class="fs-2 me-2">🎂</span>
             <div>
                 <span class="fw-bold fs-5 d-block lh-1 text-white">Dulce Arte</span>
-                <small class="text-white-50" style="font-size: 0.72rem;">Pastelería Artesanal & Trazabilidad • Cloud AWS</small>
+                <small class="text-white-50" style="font-size: 0.72rem;">Pastelería Artesanal & Trazabilidad • AWS Cloud</small>
             </div>
         </a>
 
@@ -165,19 +189,24 @@
 
         <div class="collapse navbar-collapse" id="navMenu">
             <ul class="navbar-nav me-auto ms-lg-4 mb-2 mb-lg-0">
-                <li class="nav-item">
-                    <a class="nav-link fw-semibold" href="#catalogo">
-                        <i class="bi bi-cake2 me-1 text-warning"></i>Especialidades
+                <li id="navItemDashboard" class="nav-item d-none">
+                    <a class="nav-link fw-semibold active" href="#" onclick="mostrarVista('dashboard'); return false;">
+                        <i class="bi bi-speedometer2 me-1 text-warning"></i>Dashboard
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link fw-semibold" href="#pilares">
-                        <i class="bi bi-diagram-3 me-1 text-warning"></i>Trazabilidad & BOM
+                    <a class="nav-link fw-semibold" href="#" onclick="mostrarVista('landing'); return false;">
+                        <i class="bi bi-cake2 me-1 text-warning"></i>Catálogo
                     </a>
                 </li>
-                <li class="nav-item">
+                <li id="navItemKanban" class="nav-item d-none">
                     <a class="nav-link fw-semibold" href="http://32.196.211.81/pedidos/kanban/">
                         <i class="bi bi-kanban me-1 text-warning"></i>Tablero Kanban
+                    </a>
+                </li>
+                <li id="navItemPedidos" class="nav-item d-none">
+                    <a class="nav-link fw-semibold" href="http://32.196.211.81/pedidos/">
+                        <i class="bi bi-receipt me-1 text-warning"></i>Pedidos
                     </a>
                 </li>
                 <li class="nav-item">
@@ -190,14 +219,6 @@
             <div class="d-flex align-items-center gap-2 flex-wrap">
                 <span id="userBadge" class="d-none badge bg-light text-dark px-3 py-2 small shadow-sm"></span>
 
-                <button id="btnOpenCrear" type="button" onclick="abrirModalCrear()" class="d-none btn btn-success fw-bold btn-sm px-3 shadow-sm">
-                    <i class="bi bi-plus-circle me-1"></i>Nueva Receta
-                </button>
-
-                <a id="btnPanelCompleto" href="http://32.196.211.81/" class="d-none btn btn-warning fw-bold btn-sm px-3 shadow-sm text-dark">
-                    <i class="bi bi-speedometer2 me-1"></i>Ir a mi Panel
-                </a>
-
                 <button id="btnOpenLogin" type="button" class="btn btn-outline-light fw-semibold px-3 btn-sm" data-bs-toggle="modal" data-bs-target="#modalLogin">
                     <i class="bi bi-box-arrow-in-right me-1"></i>Iniciar Sesión
                 </button>
@@ -206,18 +227,18 @@
                 </button>
 
                 <button id="btnLogout" type="button" onclick="cerrarSesion()" class="d-none btn btn-outline-light btn-sm" title="Cerrar sesión">
-                    <i class="bi bi-box-arrow-right"></i>
+                    <i class="bi bi-box-arrow-right me-1"></i>Salir
                 </button>
             </div>
         </div>
     </div>
 </nav>
 
-<!-- Panel Técnico Colapsable (Oculto por defecto para que la página se vea 100% limpia como EVA-3) -->
+<!-- Panel Técnico Colapsable (Oculto por defecto; 1 clic en "Panel Cloud / JWT" para mostrar al profe) -->
 <div class="collapse bg-white border-bottom shadow-sm" id="panelDocente">
     <div class="container py-3">
         <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
-            <span class="fw-bold small" style="color: var(--dulce-cafe);">
+            <span class="fw-bold small text-dulce-cafe">
                 <i class="bi bi-cloud-check-fill me-1 text-warning"></i>Verificación Técnica AWS (API Gateway + JWT + Rate Limit + Lambda SNS)
             </span>
             <span id="apiStatus" class="badge bg-success-subtle text-success border">Estado API: Conectada</span>
@@ -259,205 +280,333 @@
     </div>
 </div>
 
-<!-- Contenido Principal (Diseño EVA-3) -->
+<!-- Contenedor Principal -->
 <main class="container my-4">
 
-    <!-- Alerta de Notificaciones -->
+    <!-- Alerta Flotante -->
     <div id="alertaFlotante" class="alert alert-success alert-dismissible fade show d-none shadow-sm rounded-3" role="alert">
         <i class="bi bi-check-circle-fill me-2"></i><span id="alertaFlotanteTexto"></span>
         <button type="button" class="btn-close" onclick="document.getElementById('alertaFlotante').classList.add('d-none')"></button>
     </div>
 
-    <!-- Hero Banner EVA-3 -->
-    <section class="hero-banner mb-4">
-        <div class="row align-items-center g-4">
-            <div class="col-lg-7">
-                <span class="hero-badge shadow-sm">
-                    <i class="bi bi-award-fill me-1"></i>Dulce Arte • Django 5 + AWS RDS PostgreSQL + API Gateway
-                </span>
-                <h1 class="display-6 fw-bold mb-3 text-white">
-                    Pastelería Artesanal & Control de Producción
+    <!-- ====================================================================== -->
+    <!-- VISTA 1: DASHBOARD FAMILIAR EVA-3 (SE MUESTRA AUTOMÁTICAMENTE AL LOGUEARSE) -->
+    <!-- ====================================================================== -->
+    <div id="vistaDashboard" class="d-none">
+        <!-- Encabezado Dashboard -->
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+            <div>
+                <h1 class="h3 mb-0 text-dulce-cafe fw-bold">
+                    <i class="bi bi-speedometer2 me-2"></i>Panel de Control
                 </h1>
-                <p class="lead mb-4 text-white-50 fs-6">
-                    Sistema integral de trazabilidad end-to-end: conecta cotizaciones personalizadas, recetas con Lista de Materiales (BOM) y merma técnica, control de cocina en Kanban digital y rutas de despacho con firma táctil móvil.
-                </p>
-                <div class="d-flex gap-2 flex-wrap">
-                    <a href="#catalogo" class="btn btn-light fw-bold px-4 py-2 text-dark shadow-sm">
-                        <i class="bi bi-grid-fill me-1" style="color: var(--dulce-cafe);"></i>Ver Catálogo
-                    </a>
-                    <button type="button" class="btn btn-outline-warning fw-semibold px-4 py-2 text-white" data-bs-toggle="modal" data-bs-target="#modalLogin">
-                        <i class="bi bi-play-circle me-1 text-warning"></i>Probar Demostración
-                    </button>
+                <p id="dashSaludo" class="text-muted small mb-0">Bienvenido/a</p>
+            </div>
+            <div class="d-flex gap-2 flex-wrap align-items-center">
+                <button id="btnDashNuevaReceta" type="button" onclick="abrirModalCrear()" class="d-none btn btn-success btn-sm fw-bold shadow-sm px-3">
+                    <i class="bi bi-plus-circle me-1"></i>Nueva Receta (CRUD)
+                </button>
+                <a href="http://32.196.211.81/pedidos/nuevo/" class="btn btn-dulce-cafe btn-sm fw-bold shadow-sm px-3">
+                    <i class="bi bi-bag-plus me-1"></i>Nuevo Pedido
+                </a>
+                <a href="http://32.196.211.81/" class="btn btn-outline-dark btn-sm fw-semibold px-3">
+                    <i class="bi bi-box-arrow-up-right me-1"></i>Abrir Panel Clásico EC2
+                </a>
+                <span id="dashFechaHoy" class="badge bg-white text-dulce-cafe border border-2 border-dulce-rosa px-3 py-2 shadow-sm">
+                    <i class="bi bi-calendar3 me-1 text-dulce-rosa"></i>Hoy
+                </span>
+            </div>
+        </div>
+
+        <!-- 4 Tarjetas KPI (Exactamente como EVA-3) -->
+        <div class="row g-3 mb-4">
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm h-100 card-kpi">
+                    <div class="card-body d-flex align-items-center gap-3">
+                        <div class="rounded-circle p-3 bg-warning bg-opacity-15">
+                            <i class="bi bi-hourglass-split fs-3 text-warning"></i>
+                        </div>
+                        <div>
+                            <p class="text-muted small mb-0 fw-semibold text-uppercase">Cotizaciones / Borrador</p>
+                            <h2 id="kpiPendientes" class="mb-0 fw-bold text-dark">—</h2>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent border-0 pt-0">
+                        <a href="http://32.196.211.81/pedidos/?estado=COTIZADO" class="text-decoration-none small text-warning fw-semibold">
+                            Ver cotizados <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
 
-            <div class="col-lg-5">
-                <div class="hero-feature-card">
-                    <div class="d-flex align-items-center mb-2">
-                        <span class="badge bg-warning text-dark p-2 rounded-circle me-2 fs-5">
-                            <i class="bi bi-database-fill-check"></i>
-                        </span>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm h-100 card-kpi">
+                    <div class="card-body d-flex align-items-center gap-3">
+                        <div class="rounded-circle p-3 bg-primary bg-opacity-15">
+                            <i class="bi bi-fire fs-3 text-primary"></i>
+                        </div>
                         <div>
-                            <h5 class="fw-bold mb-0 text-white">Persistencia Transaccional</h5>
-                            <small class="text-warning">AWS RDS PostgreSQL &bull; Alertas SNS</small>
+                            <p class="text-muted small mb-0 fw-semibold text-uppercase">En Cocina</p>
+                            <h2 id="kpiCocina" class="mb-0 fw-bold text-dark">—</h2>
                         </div>
                     </div>
-                    <p class="small text-white-50 mb-3">
-                        Descuento atómico de insumos mediante <code>select_for_update()</code> y <code>transaction.atomic()</code>, autenticado con JWT y respaldado cada 7 horas en Amazon S3.
-                    </p>
-                    <div class="row g-2 text-center small">
-                        <div class="col-4 bg-white bg-opacity-10 rounded p-2">
-                            <strong id="kpiTotalRecetas" class="d-block text-warning fs-5">13</strong>
-                            <span class="text-white-50" style="font-size: 0.72rem;">Recetas BOM</span>
+                    <div class="card-footer bg-transparent border-0 pt-0">
+                        <a href="http://32.196.211.81/pedidos/kanban/" class="text-decoration-none small text-primary fw-semibold">
+                            Abrir Tablero Kanban <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm h-100 card-kpi">
+                    <div class="card-body d-flex align-items-center gap-3">
+                        <div class="rounded-circle p-3 bg-success bg-opacity-15">
+                            <i class="bi bi-check2-circle fs-3 text-success"></i>
                         </div>
-                        <div class="col-4 bg-white bg-opacity-10 rounded p-2">
-                            <strong class="d-block text-warning fs-5">18</strong>
-                            <span class="text-white-50" style="font-size: 0.72rem;">Insumos Bodega</span>
+                        <div>
+                            <p class="text-muted small mb-0 fw-semibold text-uppercase">Listos para Despacho</p>
+                            <h2 id="kpiListos" class="mb-0 fw-bold text-dark">—</h2>
                         </div>
-                        <div class="col-4 bg-white bg-opacity-10 rounded p-2">
-                            <strong class="d-block text-warning fs-5">100%</strong>
-                            <span class="text-white-50" style="font-size: 0.72rem;">Trazable</span>
+                    </div>
+                    <div class="card-footer bg-transparent border-0 pt-0">
+                        <a href="http://32.196.211.81/despachos/" class="text-decoration-none small text-success fw-semibold">
+                            Planificar Rutas <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm h-100 card-kpi">
+                    <div class="card-body d-flex align-items-center gap-3">
+                        <div class="rounded-circle p-3 bg-opacity-25" style="background-color: #F4A7B9;">
+                            <i class="bi bi-truck fs-3 text-dulce-cafe"></i>
                         </div>
+                        <div>
+                            <p class="text-muted small mb-0 fw-semibold text-uppercase">Entregados Hoy</p>
+                            <h2 id="kpiEntregados" class="mb-0 fw-bold text-dark">—</h2>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent border-0 pt-0">
+                        <a href="http://32.196.211.81/pedidos/?estado=ENTREGADO" class="text-decoration-none small text-dulce-cafe fw-semibold">
+                            Ver historial <i class="bi bi-arrow-right"></i>
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
-    </section>
 
-    <!-- Barra de Búsqueda y Filtros EVA-3 -->
-    <section class="filter-card mb-5">
-        <div class="row g-3 align-items-center">
-            <div class="col-md-5">
-                <label class="form-label small fw-bold text-muted mb-1">
-                    <i class="bi bi-search me-1" style="color: var(--dulce-cafe);"></i>Buscar Producto o Ingrediente
-                </label>
-                <input type="text" id="buscarProducto" oninput="renderCatalogo()" class="form-control" placeholder="Ej: Chocolate Belga, Cheesecake, Café...">
+        <!-- Tabla de Pedidos + Alertas de Bodega (Diseño EVA-3) -->
+        <div class="row g-4 mb-5">
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0 fw-bold text-dulce-cafe">
+                            <i class="bi bi-receipt-cutoff me-2 text-warning"></i>Pedidos Recientes (AWS RDS PostgreSQL)
+                        </h6>
+                        <button onclick="cargarPedidos()" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0 small">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="ps-3">Código</th>
+                                        <th>Cliente</th>
+                                        <th>Entrega</th>
+                                        <th>Estado</th>
+                                        <th class="pe-3 text-end">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tablaPedidosBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="col-md-4">
-                <label class="form-label small fw-bold text-muted mb-1">
-                    <i class="bi bi-tag me-1 text-warning"></i>Categoría de Pastelería
-                </label>
-                <select id="filtroCategoria" onchange="renderCatalogo()" class="form-select">
-                    <option value="">Todas las categorías</option>
-                    <option value="TORTA">Tortas</option>
-                    <option value="POSTRE">Postres y Pies</option>
-                    <option value="GALLETA">Galletas</option>
-                    <option value="DULCE">Opciones Dulces</option>
-                    <option value="CAFETERIA">Cafetería de Especialidad</option>
-                </select>
+
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0 fw-bold text-danger">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>Alertas de Bodega
+                        </h6>
+                        <a href="http://32.196.211.81/catalogo/insumos/?stock_bajo=true" class="small text-muted text-decoration-none">Ver todos</a>
+                    </div>
+                    <div class="card-body p-0">
+                        <ul id="listaAlertasBodega" class="list-group list-group-flush small">
+                            <li class="list-group-item text-muted text-center py-4">Cargando alertas de inventario...</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
-            <div class="col-md-3 d-flex align-items-end gap-2">
-                <button type="button" onclick="limpiarFiltros()" class="btn btn-dulce-cafe fw-bold w-100 py-2 shadow-sm">
-                    <i class="bi bi-arrow-counterclockwise me-1"></i>Ver Todo
+        </div>
+
+        <!-- Gestión Rápida de Catálogo desde el Dashboard -->
+        <div class="mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold text-dulce-cafe mb-0">
+                    <i class="bi bi-cake2-fill me-2 text-dulce-rosa"></i>Gestión Rápida de Catálogo (CRUD en Vivo)
+                </h5>
+                <button onclick="mostrarVista('landing')" class="btn btn-sm btn-outline-dark">
+                    Ver como Cliente Público
                 </button>
             </div>
+            <div id="gridCatalogoDash" class="row g-3"></div>
         </div>
-    </section>
+    </div>
 
-    <!-- Catálogo de Especialidades (4 columnas como EVA-3) -->
-    <section id="catalogo" class="mb-5">
-        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-            <div>
-                <h2 class="h4 fw-bold mb-0" style="color: var(--dulce-cafe);">
-                    <i class="bi bi-cake2-fill me-2" style="color: var(--dulce-rosa);"></i>Especialidades Artesanales
-                </h2>
-                <small class="text-muted">Ingeniería de recetas con Lista de Materiales (BOM) y cálculo de mermas</small>
-            </div>
-            <span id="contadorProductosBadge" class="badge bg-white text-dark border px-3 py-2 fw-semibold shadow-sm">
-                Cargando catálogo...
-            </span>
-        </div>
-
-        <div id="gridCatalogo" class="row g-4">
-            <!-- Tarjetas generadas dinámicamente por app.js -->
-        </div>
-    </section>
-
-    <!-- Tabla de Pedidos del Usuario (Visible al iniciar sesión) -->
-    <section id="seccionPedidos" class="d-none mb-5">
-        <div class="card border-0 shadow-sm rounded-4 p-4">
-            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                <div>
-                    <h3 class="h5 fw-bold mb-0" style="color: var(--dulce-cafe);">
-                        <i class="bi bi-receipt-cutoff me-2 text-warning"></i>Pedidos Registrados en el Sistema
-                    </h3>
-                    <small class="text-muted">Sincronizados en tiempo real con PostgreSQL RDS</small>
+    <!-- ====================================================================== -->
+    <!-- VISTA 2: LANDING PAGE PÚBLICA EVA-3 (ANTES DE INICIAR SESIÓN O AL VER CATÁLOGO) -->
+    <!-- ====================================================================== -->
+    <div id="vistaLanding">
+        <!-- Hero Banner EVA-3 -->
+        <section class="hero-banner mb-4">
+            <div class="row align-items-center g-4">
+                <div class="col-lg-7">
+                    <span class="hero-badge shadow-sm">
+                        <i class="bi bi-award-fill me-1"></i>Dulce Arte • Django 5 + AWS RDS PostgreSQL + API Gateway
+                    </span>
+                    <h1 class="display-6 fw-bold mb-3 text-white">
+                        Pastelería Artesanal & Control de Producción
+                    </h1>
+                    <p class="lead mb-4 text-white-50 fs-6">
+                        Sistema integral de trazabilidad end-to-end: conecta cotizaciones personalizadas, recetas con Lista de Materiales (BOM) y merma técnica, control de cocina en Kanban digital y rutas de despacho con firma táctil móvil.
+                    </p>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a href="#catalogo" class="btn btn-light fw-bold px-4 py-2 text-dark shadow-sm">
+                            <i class="bi bi-grid-fill me-1 text-dulce-cafe"></i>Ver Catálogo
+                        </a>
+                        <button type="button" class="btn btn-outline-warning fw-semibold px-4 py-2 text-white" data-bs-toggle="modal" data-bs-target="#modalLogin">
+                            <i class="bi bi-play-circle me-1 text-warning"></i>Probar Demostración
+                        </button>
+                    </div>
                 </div>
-                <div class="d-flex gap-2">
-                    <a href="http://32.196.211.81/pedidos/nuevo/" class="btn btn-sm btn-dulce-cafe fw-bold">
-                        <i class="bi bi-plus-lg me-1"></i>Crear Nuevo Pedido
-                    </a>
-                    <button onclick="cargarPedidos()" class="btn btn-sm btn-outline-secondary">
-                        <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+
+                <div class="col-lg-5">
+                    <div class="hero-feature-card">
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="badge bg-warning text-dark p-2 rounded-circle me-2 fs-5">
+                                <i class="bi bi-database-fill-check"></i>
+                            </span>
+                            <div>
+                                <h5 class="fw-bold mb-0 text-white">Persistencia Transaccional</h5>
+                                <small class="text-warning">AWS RDS PostgreSQL &bull; Alertas SNS</small>
+                            </div>
+                        </div>
+                        <p class="small text-white-50 mb-3">
+                            Descuento atómico de insumos mediante <code>select_for_update()</code> y <code>transaction.atomic()</code>, autenticado con JWT y respaldado cada 7 horas en Amazon S3.
+                        </p>
+                        <div class="row g-2 text-center small">
+                            <div class="col-4 bg-white bg-opacity-10 rounded p-2">
+                                <strong id="kpiTotalRecetas" class="d-block text-warning fs-5">13</strong>
+                                <span class="text-white-50" style="font-size: 0.72rem;">Recetas BOM</span>
+                            </div>
+                            <div class="col-4 bg-white bg-opacity-10 rounded p-2">
+                                <strong class="d-block text-warning fs-5">18</strong>
+                                <span class="text-white-50" style="font-size: 0.72rem;">Insumos Bodega</span>
+                            </div>
+                            <div class="col-4 bg-white bg-opacity-10 rounded p-2">
+                                <strong class="d-block text-warning fs-5">100%</strong>
+                                <span class="text-white-50" style="font-size: 0.72rem;">Trazable</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Barra de Búsqueda y Filtros EVA-3 -->
+        <section class="filter-card mb-5">
+            <div class="row g-3 align-items-center">
+                <div class="col-md-5">
+                    <label class="form-label small fw-bold text-muted mb-1">
+                        <i class="bi bi-search me-1 text-dulce-cafe"></i>Buscar Producto o Ingrediente
+                    </label>
+                    <input type="text" id="buscarProducto" oninput="renderCatalogo()" class="form-control" placeholder="Ej: Chocolate Belga, Cheesecake, Café...">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-muted mb-1">
+                        <i class="bi bi-tag me-1 text-warning"></i>Categoría de Pastelería
+                    </label>
+                    <select id="filtroCategoria" onchange="renderCatalogo()" class="form-select">
+                        <option value="">Todas las categorías</option>
+                        <option value="TORTA">Tortas</option>
+                        <option value="POSTRE">Postres y Pies</option>
+                        <option value="GALLETA">Galletas</option>
+                        <option value="DULCE">Opciones Dulces</option>
+                        <option value="CAFETERIA">Cafetería de Especialidad</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end gap-2">
+                    <button type="button" onclick="limpiarFiltros()" class="btn btn-dulce-cafe fw-bold w-100 py-2 shadow-sm">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i>Ver Todo
                     </button>
                 </div>
             </div>
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0 small">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Código</th>
-                            <th>Cliente</th>
-                            <th>Fecha Entrega</th>
-                            <th>Estado</th>
-                            <th>Total</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tablaPedidosBody"></tbody>
-                </table>
-            </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- 4 Pilares del Sistema EVA-3 -->
-    <section id="pilares" class="mb-5 py-4 border-top">
-        <div class="text-center mb-5">
-            <span class="badge px-3 py-2 fw-bold text-uppercase mb-2 shadow-sm" style="background-color: var(--dulce-cafe); color: #ffffff;">
-                Arquitectura de Dominio
-            </span>
-            <h2 class="h3 fw-bold" style="color: var(--dulce-cafe);">Las 4 Reglas de Negocio Clave</h2>
-            <p class="text-muted small">Implementadas en capas: Modelos &rarr; Servicios &rarr; DRF API &rarr; AWS Cloud.</p>
-        </div>
+        <!-- Catálogo de Especialidades -->
+        <section id="catalogo" class="mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                <div>
+                    <h2 class="h4 fw-bold mb-0 text-dulce-cafe">
+                        <i class="bi bi-cake2-fill me-2 text-dulce-rosa"></i>Especialidades Artesanales
+                    </h2>
+                    <small class="text-muted">Ingeniería de recetas con Lista de Materiales (BOM) y cálculo de mermas</small>
+                </div>
+                <span id="contadorProductosBadge" class="badge bg-white text-dark border px-3 py-2 fw-semibold shadow-sm">
+                    Cargando catálogo...
+                </span>
+            </div>
 
-        <div class="row g-4">
-            <div class="col-md-6 col-lg-3">
-                <div class="card h-100 border-0 shadow-sm rounded-4 p-4 border-top border-4" style="border-top-color: var(--dulce-cafe) !important;">
-                    <div class="fs-1 mb-2" style="color: var(--dulce-cafe);"><i class="bi bi-calculator"></i></div>
-                    <h4 class="h6 fw-bold">1. Cotización & Pedidos</h4>
-                    <p class="text-muted small mb-0">
-                        Asistente reactivo en 3 pasos con cálculo en vivo de IVA, descuento, 50% de anticipo y notificación automática por correo vía AWS SNS.
-                    </p>
+            <div id="gridCatalogo" class="row g-4"></div>
+        </section>
+
+        <!-- 4 Pilares del Sistema EVA-3 -->
+        <section id="pilares" class="mb-5 py-4 border-top">
+            <div class="text-center mb-5">
+                <span class="badge px-3 py-2 fw-bold text-uppercase mb-2 shadow-sm" style="background-color: var(--dulce-cafe); color: #ffffff;">
+                    Arquitectura de Dominio
+                </span>
+                <h2 class="h3 fw-bold text-dulce-cafe">Las 4 Reglas de Negocio Clave</h2>
+                <p class="text-muted small">Implementadas en capas: Modelos &rarr; Servicios &rarr; DRF API &rarr; AWS Cloud.</p>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-6 col-lg-3">
+                    <div class="card h-100 border-0 shadow-sm rounded-4 p-4 border-top border-4" style="border-top-color: var(--dulce-cafe) !important;">
+                        <div class="fs-1 mb-2 text-dulce-cafe"><i class="bi bi-calculator"></i></div>
+                        <h4 class="h6 fw-bold">1. Cotización & Pedidos</h4>
+                        <p class="text-muted small mb-0">Asistente reactivo en 3 pasos con cálculo en vivo de IVA, descuento, 50% de anticipo y notificación automática por correo vía AWS SNS.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="card h-100 border-0 shadow-sm rounded-4 p-4 border-top border-4" style="border-top-color: var(--dulce-dorado) !important;">
+                        <div class="fs-1 text-warning mb-2"><i class="bi bi-kanban"></i></div>
+                        <h4 class="h6 fw-bold">2. Tablero Kanban</h4>
+                        <p class="text-muted small mb-0">Control visual de cocina en 5 columnas drag & drop (SortableJS) con control de concurrencia optimista.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="card h-100 border-0 shadow-sm rounded-4 p-4 border-top border-4" style="border-top-color: #198754 !important;">
+                        <div class="fs-1 text-success mb-2"><i class="bi bi-boxes"></i></div>
+                        <h4 class="h6 fw-bold">3. Escandallo BOM</h4>
+                        <p class="text-muted small mb-0">Descuento atómico de insumos al confirmar pedido, considerando factor de merma y reversibilidad ante cancelación.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="card h-100 border-0 shadow-sm rounded-4 p-4 border-top border-4" style="border-top-color: var(--dulce-rosa) !important;">
+                        <div class="fs-1 mb-2 text-dulce-rosa"><i class="bi bi-truck"></i></div>
+                        <h4 class="h6 fw-bold">4. Rutas & Firma</h4>
+                        <p class="text-muted small mb-0">Asignación a repartidores, enlace GPS y confirmación con firma digital táctil sobre HTML5 Canvas.</p>
+                    </div>
                 </div>
             </div>
-            <div class="col-md-6 col-lg-3">
-                <div class="card h-100 border-0 shadow-sm rounded-4 p-4 border-top border-4" style="border-top-color: var(--dulce-dorado) !important;">
-                    <div class="fs-1 text-warning mb-2"><i class="bi bi-kanban"></i></div>
-                    <h4 class="h6 fw-bold">2. Tablero Kanban</h4>
-                    <p class="text-muted small mb-0">
-                        Control visual de cocina en 5 columnas drag & drop (SortableJS) con control de concurrencia optimista.
-                    </p>
-                </div>
-            </div>
-            <div class="col-md-6 col-lg-3">
-                <div class="card h-100 border-0 shadow-sm rounded-4 p-4 border-top border-4" style="border-top-color: #198754 !important;">
-                    <div class="fs-1 text-success mb-2"><i class="bi bi-boxes"></i></div>
-                    <h4 class="h6 fw-bold">3. Escandallo BOM</h4>
-                    <p class="text-muted small mb-0">
-                        Descuento atómico de insumos al confirmar pedido, considerando factor de merma y reversibilidad ante cancelación.
-                    </p>
-                </div>
-            </div>
-            <div class="col-md-6 col-lg-3">
-                <div class="card h-100 border-0 shadow-sm rounded-4 p-4 border-top border-4" style="border-top-color: var(--dulce-rosa) !important;">
-                    <div class="fs-1 mb-2" style="color: var(--dulce-rosa);"><i class="bi bi-truck"></i></div>
-                    <h4 class="h6 fw-bold">4. Rutas & Firma</h4>
-                    <p class="text-muted small mb-0">
-                        Asignación a repartidores, enlace GPS y confirmación con firma digital táctil sobre HTML5 Canvas.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </section>
+        </section>
+    </div>
 
 </main>
 
@@ -470,7 +619,7 @@
                     <span class="fs-3 text-warning me-2"><i class="bi bi-box-arrow-in-right"></i></span>
                     <div>
                         <h5 class="modal-title fw-bold" id="modalLoginLabel">Iniciar Sesión</h5>
-                        <small class="text-white-50">Acceso al Sistema Dulce Arte (JWT Auth)</small>
+                        <small class="text-white-50">Acceso al Dashboard Dulce Arte (JWT Auth)</small>
                     </div>
                 </div>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -478,25 +627,21 @@
 
             <div class="modal-body p-4 pt-3">
                 <p class="text-muted small mb-3">
-                    Ingresa con tus credenciales o utiliza los <strong>accesos rápidos demo</strong> para iniciar sesión en 1 clic.
+                    Ingresa con tus credenciales o utiliza los <strong>accesos rápidos demo</strong> para entrar directamente al Panel de Control.
                 </p>
 
                 <form onsubmit="iniciarSesion(event)">
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold text-muted">
-                            <i class="bi bi-person me-1"></i>Nombre de Usuario
-                        </label>
+                        <label class="form-label small fw-semibold text-muted"><i class="bi bi-person me-1"></i>Nombre de Usuario</label>
                         <input type="text" id="loginUser" class="form-control" placeholder="Ej: admin o vendedor" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold text-muted">
-                            <i class="bi bi-lock me-1"></i>Contraseña
-                        </label>
+                        <label class="form-label small fw-semibold text-muted"><i class="bi bi-lock me-1"></i>Contraseña</label>
                         <input type="password" id="loginPass" class="form-control" placeholder="Ingresa tu contraseña" required>
                     </div>
                     <div id="loginError" class="alert alert-danger py-2 small d-none"></div>
                     <button type="submit" class="btn btn-dulce-cafe fw-bold w-100 py-2 shadow-sm mb-3">
-                        <i class="bi bi-box-arrow-in-right me-1"></i>Ingresar al Sistema
+                        <i class="bi bi-box-arrow-in-right me-1"></i>Ingresar al Panel
                     </button>
                 </form>
 
@@ -530,7 +675,7 @@
     </div>
 </div>
 
-<!-- Modal CRUD de Receta / Producto (Crea o Edita en RDS y envía correo vía Lambda -> SNS) -->
+<!-- Modal CRUD de Receta / Producto -->
 <div class="modal fade" id="modalProducto" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
@@ -577,7 +722,7 @@
                     </div>
                     <div id="prodError" class="alert alert-danger py-2 small d-none"></div>
                     <button type="submit" class="btn btn-dulce-cafe fw-bold w-100 py-2">
-                        <i class="bi bi-save me-1"></i>Guardar en RDS y Notificar por Correo (SNS)
+                        <i class="bi bi-save me-1"></i>Guardar en RDS y Enviar Aviso SNS
                     </button>
                 </form>
             </div>
@@ -588,7 +733,7 @@
 <!-- Footer EVA-3 -->
 <footer class="footer-landing py-4 text-center mt-5">
     <div class="container">
-        <p class="mb-1 fw-bold" style="color: var(--dulce-cafe);">Dulce Arte &mdash; Sistema de Trazabilidad y Pedidos para Pastelería Artesanal</p>
+        <p class="mb-1 fw-bold text-dulce-cafe">Dulce Arte &mdash; Sistema de Trazabilidad y Pedidos para Pastelería Artesanal</p>
         <p class="mb-0 small text-muted">
             Desarrollo Backend &bull; Alumno: Rodrigo Alejandro Gallardo Martínez &bull; AWS EC2, RDS PostgreSQL, S3, API Gateway & Lambda/SNS
         </p>

@@ -1,6 +1,7 @@
 /**
- * app.js — Frontend Dulce Arte (Diseño EVA-3 con Integración Cloud EVA-4)
+ * app.js — Frontend Dulce Arte (Diseño EVA-3 + Dashboard Automático + Cloud EVA-4)
  * Consume la API REST vía Amazon API Gateway usando JWT (Bearer Token),
+ * cambia automáticamente al Dashboard estilo EVA-3 al iniciar sesión,
  * ejecuta operaciones CRUD (GET, POST, PATCH, DELETE) sobre PostgreSQL RDS
  * y dispara notificaciones automáticas por correo vía AWS Lambda -> SNS.
  */
@@ -13,6 +14,7 @@ let JWT_REFRESH = localStorage.getItem('dulcearte_jwt_refresh') || '';
 let AUTH_TOKEN = localStorage.getItem('dulcearte_token') || '';
 let USER_INFO = JSON.parse(localStorage.getItem('dulcearte_user') || 'null');
 let CATALOGO_DATA = [];
+let VISTA_ACTUAL = 'landing';
 
 const CATEGORIA_LABELS = {
     'TORTA': 'Tortas Clásicas y Especiales',
@@ -27,6 +29,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const inLam = document.getElementById('inputLambdaUrl');
     if (inApi) inApi.value = API_BASE;
     if (inLam) inLam.value = LAMBDA_URL;
+
+    actualizarFechaDashboard();
     actualizarUIUsuario();
     cargarCatalogo();
 });
@@ -37,6 +41,10 @@ function getAuthHeader() {
     return {};
 }
 
+function estaAutenticado() {
+    return Boolean((JWT_ACCESS || AUTH_TOKEN) && USER_INFO);
+}
+
 function escapeHtml(value) {
     return String(value ?? '')
         .replace(/&/g, '&amp;')
@@ -44,6 +52,45 @@ function escapeHtml(value) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+}
+
+function actualizarFechaDashboard() {
+    const el = document.getElementById('dashFechaHoy');
+    if (!el) return;
+    const hoy = new Date().toLocaleDateString('es-CL', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+    });
+    const capitalizada = hoy.charAt(0).toUpperCase() + hoy.slice(1);
+    el.innerHTML = `<i class="bi bi-calendar3 me-1 text-dulce-rosa"></i>${escapeHtml(capitalizada)}`;
+}
+
+function mostrarVista(vista) {
+    const dash = document.getElementById('vistaDashboard');
+    const land = document.getElementById('vistaLanding');
+    if (!dash || !land) return;
+
+    if (vista === 'dashboard' && estaAutenticado()) {
+        VISTA_ACTUAL = 'dashboard';
+        dash.classList.remove('d-none');
+        land.classList.add('d-none');
+    } else {
+        VISTA_ACTUAL = 'landing';
+        dash.classList.add('d-none');
+        land.classList.remove('d-none');
+    }
+
+    const navDashLink = document.querySelector('#navItemDashboard .nav-link');
+    if (navDashLink) {
+        navDashLink.classList.toggle('active', VISTA_ACTUAL === 'dashboard');
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function irAVistaPrincipal() {
+    mostrarVista(estaAutenticado() ? 'dashboard' : 'landing');
 }
 
 function mostrarAlerta(texto) {
@@ -79,12 +126,16 @@ function guardarConfig() {
     localStorage.setItem('dulcearte_api_url', API_BASE);
     localStorage.setItem('dulcearte_lambda_url', LAMBDA_URL);
     cargarCatalogo();
-    if (JWT_ACCESS || AUTH_TOKEN) cargarPedidos();
+    if (estaAutenticado()) {
+        cargarDatosDashboard();
+    }
 }
 
 function limpiarFiltros() {
-    document.getElementById('buscarProducto').value = '';
-    document.getElementById('filtroCategoria').value = '';
+    const buscar = document.getElementById('buscarProducto');
+    const cat = document.getElementById('filtroCategoria');
+    if (buscar) buscar.value = '';
+    if (cat) cat.value = '';
     renderCatalogo();
 }
 
@@ -127,13 +178,75 @@ async function cargarCatalogo() {
     }
 }
 
+function crearTarjetaRecetaHtml(r, autenticado, puedeEditar) {
+    const imgUrl = r.imagen
+        ? (r.imagen.startsWith('http') ? r.imagen : `http://32.196.211.81${r.imagen}`)
+        : 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=600&q=80';
+    const catLabel = r.categoria_display || CATEGORIA_LABELS[r.categoria] || r.categoria;
+
+    const btnAccion = autenticado
+        ? `<a href="http://32.196.211.81/pedidos/nuevo/" class="btn btn-sm btn-outline-dark fw-bold px-3">
+               <i class="bi bi-bag-plus me-1 text-warning"></i>Cotizar
+           </a>`
+        : `<button type="button" class="btn btn-sm btn-outline-dark fw-bold px-3" data-bs-toggle="modal" data-bs-target="#modalLogin">
+               <i class="bi bi-bag-plus me-1 text-warning"></i>Cotizar
+           </button>`;
+
+    const barraCrud = puedeEditar ? `
+        <div class="border-top pt-2 mt-2 d-flex justify-content-end gap-1">
+            <button type="button" onclick="abrirModalEditar(${Number(r.id)})" class="btn btn-sm btn-light border text-dark py-0 px-2" style="font-size: 0.75rem;">
+                <i class="bi bi-pencil-square text-primary me-1"></i>Editar
+            </button>
+            <button type="button" onclick="eliminarProductoCRUD(${Number(r.id)})" class="btn btn-sm btn-light border text-danger py-0 px-2" style="font-size: 0.75rem;">
+                <i class="bi bi-trash3 me-1"></i>Eliminar
+            </button>
+        </div>` : '';
+
+    return `
+    <div class="col-md-6 col-lg-3">
+        <div class="receta-card">
+            <div class="receta-img-container">
+                <img src="${escapeHtml(imgUrl)}" class="receta-img" alt="${escapeHtml(r.nombre)}">
+                <div class="position-absolute top-0 end-0 m-2">
+                    <span class="badge bg-white text-dark shadow-sm border small">
+                        <i class="bi bi-clock me-1 text-warning"></i>${Number(r.tiempo_preparacion_min)} min
+                    </span>
+                </div>
+            </div>
+
+            <div class="p-3 d-flex flex-column flex-grow-1">
+                <div class="mb-2">
+                    <span class="badge px-2 py-1 small" style="background-color: var(--dulce-crema); color: var(--dulce-cafe); border: 1px solid rgba(107,66,38,0.2);">
+                        ${escapeHtml(catLabel)}
+                    </span>
+                </div>
+
+                <h3 class="h6 fw-bold text-dark mb-1" style="min-height: 38px;">${escapeHtml(r.nombre)}</h3>
+                <p class="text-muted small mb-3 flex-grow-1" style="font-size: 0.8rem; min-height: 48px;">
+                    ${escapeHtml(r.descripcion || 'Elaboración artesanal con ingredientes seleccionados.')}
+                </p>
+
+                <div class="border-top pt-2 mt-auto d-flex justify-content-between align-items-center">
+                    <div>
+                        <small class="text-muted d-block" style="font-size: 0.7rem;">Precio base</small>
+                        <span class="price-tag">$${Number(r.precio_base).toLocaleString('es-CL')}</span>
+                    </div>
+                    ${btnAccion}
+                </div>
+                ${barraCrud}
+            </div>
+        </div>
+    </div>`;
+}
+
 function renderCatalogo() {
-    const grid = document.getElementById('gridCatalogo');
+    const gridLanding = document.getElementById('gridCatalogo');
+    const gridDash = document.getElementById('gridCatalogoDash');
     const badgeCount = document.getElementById('contadorProductosBadge');
-    const cat = document.getElementById('filtroCategoria').value;
-    const q = document.getElementById('buscarProducto').value.toLowerCase().trim();
-    const autenticado = Boolean(JWT_ACCESS || AUTH_TOKEN);
-    const puedeEditar = autenticado && USER_INFO && ['ADMIN', 'COCINA'].includes(USER_INFO.rol);
+    const cat = document.getElementById('filtroCategoria')?.value || '';
+    const q = (document.getElementById('buscarProducto')?.value || '').toLowerCase().trim();
+    const autenticado = estaAutenticado();
+    const puedeEditar = autenticado && ['ADMIN', 'COCINA'].includes(USER_INFO.rol);
 
     const filtrados = CATALOGO_DATA.filter(item => {
         const matchCat = !cat || item.categoria === cat;
@@ -145,76 +258,26 @@ function renderCatalogo() {
         badgeCount.textContent = `${filtrados.length} producto${filtrados.length === 1 ? '' : 's'} disponible${filtrados.length === 1 ? '' : 's'}`;
     }
 
-    if (filtrados.length === 0) {
-        grid.innerHTML = `
-            <div class="col-12 text-center py-5">
-                <i class="bi bi-search fs-1 text-muted d-block mb-2"></i>
-                <h4 class="h5 text-muted">No se encontraron productos con los filtros aplicados.</h4>
-                <button onclick="limpiarFiltros()" class="btn btn-outline-dark btn-sm mt-2">Ver todo el catálogo</button>
-            </div>`;
-        return;
+    if (gridLanding) {
+        if (filtrados.length === 0) {
+            gridLanding.innerHTML = `
+                <div class="col-12 text-center py-5">
+                    <i class="bi bi-search fs-1 text-muted d-block mb-2"></i>
+                    <h4 class="h5 text-muted">No se encontraron productos con los filtros aplicados.</h4>
+                    <button onclick="limpiarFiltros()" class="btn btn-outline-dark btn-sm mt-2">Ver todo el catálogo</button>
+                </div>`;
+        } else {
+            gridLanding.innerHTML = filtrados.map(r => crearTarjetaRecetaHtml(r, autenticado, puedeEditar)).join('');
+        }
     }
 
-    grid.innerHTML = filtrados.map(r => {
-        const imgUrl = r.imagen
-            ? (r.imagen.startsWith('http') ? r.imagen : `http://32.196.211.81${r.imagen}`)
-            : 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=600&q=80';
-        const catLabel = r.categoria_display || CATEGORIA_LABELS[r.categoria] || r.categoria;
-
-        const btnAccion = autenticado
-            ? `<a href="http://32.196.211.81/pedidos/nuevo/" class="btn btn-sm btn-outline-dark fw-bold px-3">
-                   <i class="bi bi-bag-plus me-1 text-warning"></i>Cotizar
-               </a>`
-            : `<button type="button" class="btn btn-sm btn-outline-dark fw-bold px-3" data-bs-toggle="modal" data-bs-target="#modalLogin">
-                   <i class="bi bi-bag-plus me-1 text-warning"></i>Cotizar
-               </button>`;
-
-        const barraCrud = puedeEditar ? `
-            <div class="border-top pt-2 mt-2 d-flex justify-content-end gap-1">
-                <button type="button" onclick="abrirModalEditar(${r.id})" class="btn btn-sm btn-light border text-dark py-0 px-2" style="font-size: 0.75rem;">
-                    <i class="bi bi-pencil-square text-primary me-1"></i>Editar
-                </button>
-                <button type="button" onclick="eliminarProductoCRUD(${r.id})" class="btn btn-sm btn-light border text-danger py-0 px-2" style="font-size: 0.75rem;">
-                    <i class="bi bi-trash3 me-1"></i>Eliminar
-                </button>
-            </div>` : '';
-
-        return `
-        <div class="col-md-6 col-lg-3">
-            <div class="receta-card">
-                <div class="receta-img-container">
-                    <img src="${escapeHtml(imgUrl)}" class="receta-img" alt="${escapeHtml(r.nombre)}">
-                    <div class="position-absolute top-0 end-0 m-2">
-                        <span class="badge bg-white text-dark shadow-sm border small">
-                            <i class="bi bi-clock me-1 text-warning"></i>${Number(r.tiempo_preparacion_min)} min
-                        </span>
-                    </div>
-                </div>
-
-                <div class="p-3 d-flex flex-column flex-grow-1">
-                    <div class="mb-2">
-                        <span class="badge px-2 py-1 small" style="background-color: var(--dulce-crema); color: var(--dulce-cafe); border: 1px solid rgba(107,66,38,0.2);">
-                            ${escapeHtml(catLabel)}
-                        </span>
-                    </div>
-
-                    <h3 class="h6 fw-bold text-dark mb-1" style="min-height: 38px;">${escapeHtml(r.nombre)}</h3>
-                    <p class="text-muted small mb-3 flex-grow-1" style="font-size: 0.8rem; min-height: 48px;">
-                        ${escapeHtml(r.descripcion || 'Elaboración artesanal con ingredientes seleccionados.')}
-                    </p>
-
-                    <div class="border-top pt-2 mt-auto d-flex justify-content-between align-items-center">
-                        <div>
-                            <small class="text-muted d-block" style="font-size: 0.7rem;">Precio base</small>
-                            <span class="price-tag">$${Number(r.precio_base).toLocaleString('es-CL')}</span>
-                        </div>
-                        ${btnAccion}
-                    </div>
-                    ${barraCrud}
-                </div>
-            </div>
-        </div>`;
-    }).join('');
+    if (gridDash) {
+        if (CATALOGO_DATA.length === 0) {
+            gridDash.innerHTML = `<div class="col-12 text-center text-muted py-4">Cargando recetas desde AWS RDS...</div>`;
+        } else {
+            gridDash.innerHTML = CATALOGO_DATA.map(r => crearTarjetaRecetaHtml(r, autenticado, puedeEditar)).join('');
+        }
+    }
 }
 
 function abrirModalCrear() {
@@ -257,7 +320,7 @@ async function guardarProductoCRUD(e) {
         precio_base: String(document.getElementById('prodPrecio').value),
         tiempo_preparacion_min: Number(document.getElementById('prodTiempo').value),
         rendimiento: Number(document.getElementById('prodRendimiento').value),
-        margen_deseado: "35.00",
+        margen_deseado: '35.00',
         descripcion: document.getElementById('prodDescripcion').value.trim(),
         activo: true
     };
@@ -299,7 +362,7 @@ async function eliminarProductoCRUD(id) {
         });
         logCrudJson('DELETE', `/api/recetas/${id}/`, res.status, { eliminado_id: id, status: res.status });
         if (!res.ok && res.status !== 204) throw new Error(`HTTP ${res.status}`);
-        mostrarAlerta(`Receta eliminada exitosamente de PostgreSQL RDS.`);
+        mostrarAlerta('Receta eliminada exitosamente de PostgreSQL RDS.');
         await cargarCatalogo();
     } catch (err) {
         alert(`No se pudo eliminar (puede tener pedidos asociados en RDS): ${err.message}`);
@@ -385,48 +448,124 @@ function actualizarUIUsuario() {
     const btnIn = document.getElementById('btnOpenLogin');
     const btnFast = document.getElementById('btnFastAccess');
     const btnOut = document.getElementById('btnLogout');
-    const btnCrear = document.getElementById('btnOpenCrear');
-    const btnPanel = document.getElementById('btnPanelCompleto');
-    const secPed = document.getElementById('seccionPedidos');
+    const btnDashCrear = document.getElementById('btnDashNuevaReceta');
+    const navDash = document.getElementById('navItemDashboard');
+    const navKanban = document.getElementById('navItemKanban');
+    const navPedidos = document.getElementById('navItemPedidos');
+    const dashSaludo = document.getElementById('dashSaludo');
     const jwtBox = document.getElementById('jwtTokenBox');
 
-    if ((JWT_ACCESS || AUTH_TOKEN) && USER_INFO) {
-        badge.innerHTML = `<i class="bi bi-person-circle text-primary me-1"></i>${escapeHtml(USER_INFO.username)} (<strong>${escapeHtml(USER_INFO.rol_display || USER_INFO.rol)}</strong>)`;
-        badge.classList.remove('d-none');
-        btnIn.classList.add('d-none');
-        btnFast.classList.add('d-none');
-        btnOut.classList.remove('d-none');
-        btnPanel.classList.remove('d-none');
-        secPed.classList.remove('d-none');
+    if (estaAutenticado()) {
+        const nombreMostrar = USER_INFO.nombre_completo || USER_INFO.username;
+        const rolMostrar = USER_INFO.rol_display || USER_INFO.rol;
 
-        if (['ADMIN', 'COCINA'].includes(USER_INFO.rol)) {
-            btnCrear.classList.remove('d-none');
-        } else {
-            btnCrear.classList.add('d-none');
+        if (badge) {
+            badge.innerHTML = `<i class="bi bi-person-circle text-primary me-1"></i>${escapeHtml(USER_INFO.username)} (<strong>${escapeHtml(rolMostrar)}</strong>)`;
+            badge.classList.remove('d-none');
         }
-
+        if (btnIn) btnIn.classList.add('d-none');
+        if (btnFast) btnFast.classList.add('d-none');
+        if (btnOut) btnOut.classList.remove('d-none');
+        if (navDash) navDash.classList.remove('d-none');
+        if (navPedidos) navPedidos.classList.remove('d-none');
+        if (navKanban) {
+            navKanban.classList.toggle('d-none', !['ADMIN', 'COCINA', 'VENDEDOR'].includes(USER_INFO.rol));
+        }
+        if (btnDashCrear) {
+            btnDashCrear.classList.toggle('d-none', !['ADMIN', 'COCINA'].includes(USER_INFO.rol));
+        }
+        if (dashSaludo) {
+            dashSaludo.textContent = `Bienvenido/a, ${nombreMostrar} (${rolMostrar}) — Datos en vivo desde AWS RDS PostgreSQL`;
+        }
         if (jwtBox && JWT_ACCESS) {
             const claims = decodificarPayloadJwt(JWT_ACCESS);
             jwtBox.textContent = `Authorization: Bearer ${JWT_ACCESS}\n\nPayload:\n${JSON.stringify(claims, null, 2)}`;
         }
-        cargarPedidos();
+
+        mostrarVista('dashboard');
+        cargarDatosDashboard();
     } else {
-        badge.classList.add('d-none');
-        btnIn.classList.remove('d-none');
-        btnFast.classList.remove('d-none');
-        btnOut.classList.add('d-none');
-        btnCrear.classList.add('d-none');
-        btnPanel.classList.add('d-none');
-        secPed.classList.add('d-none');
+        if (badge) badge.classList.add('d-none');
+        if (btnIn) btnIn.classList.remove('d-none');
+        if (btnFast) btnFast.classList.remove('d-none');
+        if (btnOut) btnOut.classList.add('d-none');
+        if (btnDashCrear) btnDashCrear.classList.add('d-none');
+        if (navDash) navDash.classList.add('d-none');
+        if (navKanban) navKanban.classList.add('d-none');
+        if (navPedidos) navPedidos.classList.add('d-none');
+        if (jwtBox) jwtBox.textContent = 'Inicia sesión para ver el token JWT...';
+
+        mostrarVista('landing');
     }
 }
 
 // ============================================================================
-// 3. TABLA DE PEDIDOS DESDE AWS RDS (Autenticado con JWT)
+// 3. DASHBOARD FAMILIAR EVA-3 (KPIs + PEDIDOS + ALERTAS DE BODEGA EN VIVO)
 // ============================================================================
+async function cargarDatosDashboard() {
+    if (!estaAutenticado()) return;
+    await Promise.all([
+        cargarResumenDashboard(),
+        cargarPedidos(),
+        cargarAlertasBodega()
+    ]);
+}
+
+async function cargarResumenDashboard() {
+    const kpiPend = document.getElementById('kpiPendientes');
+    const kpiCocina = document.getElementById('kpiCocina');
+    const kpiListos = document.getElementById('kpiListos');
+    const kpiEntreg = document.getElementById('kpiEntregados');
+
+    try {
+        const res = await fetch(`${API_BASE}/dashboard/resumen/`, {
+            headers: { ...getAuthHeader() }
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        const ventas = data.kpis_ventas || null;
+        const cocina = data.kpis_cocina || null;
+        const despachos = data.kpis_despachos || null;
+        const cliente = data.mis_pedidos || null;
+
+        if (cliente) {
+            if (kpiPend) kpiPend.textContent = cliente.total ?? '0';
+            if (kpiCocina) kpiCocina.textContent = cliente.en_curso ?? '0';
+            if (kpiListos) kpiListos.textContent = '—';
+            if (kpiEntreg) kpiEntreg.textContent = cliente.entregados ?? '0';
+            return;
+        }
+
+        if (kpiPend) {
+            kpiPend.textContent = ventas ? (ventas.pedidos_pendientes_confirmar ?? 0) : '—';
+        }
+        if (kpiCocina) {
+            kpiCocina.textContent = cocina
+                ? (cocina.recibidos_pendientes || 0) +
+                  (cocina.en_preparacion || 0) +
+                  (cocina.horneado_decorado || 0) +
+                  (cocina.control_calidad || 0)
+                : '—';
+        }
+        if (kpiListos) {
+            kpiListos.textContent = cocina ? (cocina.listos_despacho ?? 0) : '—';
+        }
+        if (kpiEntreg) {
+            kpiEntreg.textContent = despachos ? (despachos.entregados_hoy ?? 0) : '—';
+        }
+    } catch {
+        if (kpiPend) kpiPend.textContent = '—';
+        if (kpiCocina) kpiCocina.textContent = '—';
+        if (kpiListos) kpiListos.textContent = '—';
+        if (kpiEntreg) kpiEntreg.textContent = '—';
+    }
+}
+
 async function cargarPedidos() {
-    if (!JWT_ACCESS && !AUTH_TOKEN) return;
+    if (!estaAutenticado()) return;
     const tbody = document.getElementById('tablaPedidosBody');
+    if (!tbody) return;
     tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Cargando pedidos desde AWS RDS...</td></tr>';
 
     try {
@@ -442,19 +581,66 @@ async function cargarPedidos() {
             return;
         }
 
-        tbody.innerHTML = lista.map(p => `
+        tbody.innerHTML = lista.slice(0, 10).map(p => {
+            const estadoSlug = String(p.estado || '').toLowerCase();
+            return `
             <tr>
-                <td class="fw-bold font-monospace" style="color: var(--dulce-cafe);">
+                <td class="ps-3 fw-bold font-monospace" style="color: var(--dulce-cafe);">
                     <a href="http://32.196.211.81/pedidos/${Number(p.id)}/" class="text-decoration-none" style="color: var(--dulce-cafe);">${escapeHtml(p.codigo)}</a>
                 </td>
                 <td>${escapeHtml(p.cliente_nombre || p.cliente)}</td>
                 <td class="text-muted">${escapeHtml(new Date(p.fecha_entrega).toLocaleDateString('es-CL'))}</td>
-                <td><span class="badge bg-primary-subtle text-primary border px-2 py-1">${escapeHtml(p.estado_display || p.estado)}</span></td>
-                <td class="fw-bold">$${Number(p.total).toLocaleString('es-CL')}</td>
-            </tr>
+                <td><span class="badge badge-estado-${escapeHtml(estadoSlug)} px-2 py-1">${escapeHtml(p.estado_display || p.estado)}</span></td>
+                <td class="pe-3 text-end fw-bold">$${Number(p.total).toLocaleString('es-CL')}</td>
+            </tr>`;
+        }).join('');
+    } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger py-3">Error cargando pedidos: ${escapeHtml(err.message)}</td></tr>`;
+    }
+}
+
+async function cargarAlertasBodega() {
+    if (!estaAutenticado()) return;
+    const listaEl = document.getElementById('listaAlertasBodega');
+    if (!listaEl) return;
+
+    if (!['ADMIN', 'VENDEDOR', 'COCINA'].includes(USER_INFO.rol)) {
+        listaEl.innerHTML = '<li class="list-group-item text-muted text-center py-4">Alertas de inventario visibles para Cocina, Ventas y Administración.</li>';
+        return;
+    }
+
+    listaEl.innerHTML = '<li class="list-group-item text-muted text-center py-4">Consultando stock en AWS RDS...</li>';
+
+    try {
+        const res = await fetch(`${API_BASE}/insumos/?stock_bajo=true`, {
+            headers: { ...getAuthHeader() }
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const items = data.results || data;
+
+        if (!items.length) {
+            listaEl.innerHTML = `
+                <li class="list-group-item text-success text-center py-4">
+                    <i class="bi bi-check-circle-fill fs-4 d-block mb-1"></i>
+                    Todos los insumos están sobre el stock mínimo.
+                </li>`;
+            return;
+        }
+
+        listaEl.innerHTML = items.slice(0, 6).map(ins => `
+            <li class="list-group-item d-flex justify-content-between align-items-center py-2">
+                <div>
+                    <strong class="d-block text-dark">${escapeHtml(ins.nombre)}</strong>
+                    <small class="text-muted">Mínimo: ${Number(ins.stock_minimo)} ${escapeHtml(ins.unidad_medida)}</small>
+                </div>
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">
+                    ${Number(ins.stock_actual)} ${escapeHtml(ins.unidad_medida)}
+                </span>
+            </li>
         `).join('');
     } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger py-3">Error cargando pedidos: ${err.message}</td></tr>`;
+        listaEl.innerHTML = `<li class="list-group-item text-danger text-center py-3">Error cargando bodega: ${escapeHtml(err.message)}</li>`;
     }
 }
 
@@ -463,6 +649,7 @@ async function cargarPedidos() {
 // ============================================================================
 async function probarRateLimit() {
     const log = document.getElementById('rateLimitLog');
+    if (!log) return;
     log.textContent = 'Lanzando 25 peticiones rápidas...\n';
     let okCount = 0;
     let blockedCount = 0;
