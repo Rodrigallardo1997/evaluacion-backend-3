@@ -1,7 +1,6 @@
 """
 Servicio de Mensajería y Alertas en la Nube con AWS Lambda + AWS SNS.
-Permite que tanto el Backend (Django) como el Frontend envíen notificaciones por correo
-a través de la función Serverless 'dulcearte-mensajeria-sns' conectada al tópico SNS.
+Mensajes concisos, limpios y precisos con la información esencial de negocio.
 """
 import json
 import logging
@@ -14,11 +13,10 @@ logger = logging.getLogger(__name__)
 DEFAULT_LAMBDA_SNS_URL = "https://wsa4lyofyakp3pxazuyg55d7fm0zpsaf.lambda-url.us-east-1.on.aws/"
 
 
-def emitir_alerta_sns(asunto: str, mensaje: str, tipo: str = "OPERACION_BACKEND") -> bool:
+def emitir_alerta_sns(asunto: str, mensaje: str, tipo: str = "OPERACION") -> bool:
     """
-    Envía un evento a la función AWS Lambda (dulcearte-mensajeria-sns),
-    la cual publica el correo en el tópico AWS SNS (dulcearte-alertas-sns).
-    Durante la ejecución de tests unitarios ('manage.py test') omite la llamada HTTP externa.
+    Envía el mensaje limpio a la función AWS Lambda (dulcearte-mensajeria-sns),
+    que lo publica en AWS SNS (dulcearte-alertas-sns).
     """
     if "test" in sys.argv:
         return True
@@ -28,9 +26,8 @@ def emitir_alerta_sns(asunto: str, mensaje: str, tipo: str = "OPERACION_BACKEND"
         return False
 
     payload = {
-        "origen": "backend",
+        "origen": "Dulce Arte",
         "tipo": tipo,
-        "remitente": "Backend Django DRF (AWS EC2 + RDS)",
         "asunto": asunto[:90],
         "mensaje": mensaje,
     }
@@ -43,62 +40,61 @@ def emitir_alerta_sns(asunto: str, mensaje: str, tipo: str = "OPERACION_BACKEND"
         )
         with urllib.request.urlopen(req, timeout=4) as resp:  # nosec B310
             data = json.loads(resp.read().decode("utf-8"))
-            logger.info(f"[OK Lambda->SNS] Alerta enviada. MessageId: {data.get('message_id')}")
+            logger.info(f"[OK SNS] Alerta enviada (ID: {data.get('message_id')})")
             return True
     except Exception as e:
-        logger.warning(f"[WARN Lambda->SNS] No se pudo enviar alerta externa: {str(e)}")
+        logger.warning(f"[WARN SNS] No se pudo enviar alerta: {str(e)}")
         return False
 
 
 def notificar_nuevo_pedido(pedido) -> bool:
-    """Dispara correo vía Lambda -> SNS cada vez que se crea un nuevo pedido en RDS."""
+    """Notificación concisa al registrar un nuevo pedido."""
     cliente_nombre = getattr(pedido.cliente, "nombre_completo", str(pedido.cliente))
-    asunto = f"Nuevo Pedido Creado: {pedido.codigo}"
+    fecha_str = pedido.fecha_entrega.strftime("%d/%m/%Y %H:%M") if getattr(pedido, "fecha_entrega", None) else "Por confirmar"
+    asunto = f"Nuevo Pedido {pedido.codigo} - {cliente_nombre}"
     mensaje = (
-        f"Se ha registrado un nuevo pedido en la base de datos AWS RDS PostgreSQL:\n\n"
-        f"- Codigo de Orden : {pedido.codigo}\n"
-        f"- Cliente         : {cliente_nombre}\n"
-        f"- Estado Inicial  : {pedido.get_estado_display()}\n"
-        f"- Total Estimado  : ${pedido.total:,.0f} CLP\n"
-        f"- Prioridad       : {pedido.get_prioridad_display()}\n"
+        f"Nuevo pedido registrado en Dulce Arte:\n\n"
+        f"• Pedido: {pedido.codigo}\n"
+        f"• Cliente: {cliente_nombre}\n"
+        f"• Entrega: {fecha_str}\n"
+        f"• Total: ${pedido.total:,.0f} CLP ({pedido.get_estado_display()})"
     )
-    return emitir_alerta_sns(asunto, mensaje, tipo="NUEVO_PEDIDO_RDS")
+    return emitir_alerta_sns(asunto, mensaje, tipo="PEDIDO")
 
 
-def notificar_nueva_receta(receta, accion: str = "CREADA") -> bool:
-    """Dispara correo vía Lambda -> SNS cada vez que se crea o actualiza un producto/receta en RDS."""
-    asunto = f"Receta {accion} en Catalogo: {receta.nombre}"
+def notificar_nueva_receta(receta, accion: str = "Creada") -> bool:
+    """Notificación concisa al crear o editar un producto del catálogo."""
+    accion_limpia = "creado" if accion.upper().startswith("C") else "actualizado"
+    asunto = f"Catalogo: {receta.nombre} (${receta.precio_base:,.0f})"
     mensaje = (
-        f"Operacion CRUD persistida en AWS RDS PostgreSQL:\n\n"
-        f"- Accion          : {accion}\n"
-        f"- ID Producto     : #{receta.id}\n"
-        f"- Nombre          : {receta.nombre}\n"
-        f"- Categoria       : {receta.get_categoria_display()}\n"
-        f"- Precio Base     : ${receta.precio_base:,.0f} CLP\n"
-        f"- Tiempo Prep.    : {receta.tiempo_preparacion_min} min\n"
+        f"Producto {accion_limpia} en el catálogo:\n\n"
+        f"• Producto: {receta.nombre}\n"
+        f"• Categoría: {receta.get_categoria_display()}\n"
+        f"• Precio: ${receta.precio_base:,.0f} CLP\n"
+        f"• Preparación: {receta.tiempo_preparacion_min} min"
     )
-    return emitir_alerta_sns(asunto, mensaje, tipo=f"CRUD_RECETA_{accion}")
+    return emitir_alerta_sns(asunto, mensaje, tipo="CATALOGO")
 
 
 def notificar_stock_critico(insumo) -> bool:
-    """Emite una alerta cuando un insumo cae por debajo del umbral mínimo."""
-    asunto = f"Alerta Stock Critico: {insumo.nombre}"
+    """Notificación concisa cuando un insumo queda bajo el stock mínimo."""
+    asunto = f"Stock Bajo: {insumo.nombre}"
     mensaje = (
-        f"Alerta de inventario en Pasteleria Dulce Arte:\n\n"
-        f"- Insumo          : {insumo.nombre}\n"
-        f"- Stock Actual    : {insumo.stock_actual} {insumo.unidad}\n"
-        f"- Stock Minimo    : {insumo.stock_minimo} {insumo.unidad}\n"
+        f"Insumo en nivel crítico de inventario:\n\n"
+        f"• Insumo: {insumo.nombre}\n"
+        f"• Disponible: {insumo.stock_actual} {insumo.unidad} (Mínimo: {insumo.stock_minimo} {insumo.unidad})"
     )
-    return emitir_alerta_sns(asunto, mensaje, tipo="ALERTA_STOCK")
+    return emitir_alerta_sns(asunto, mensaje, tipo="STOCK")
 
 
 def notificar_pedido_confirmado(pedido) -> bool:
-    """Emite una alerta a cocina cuando un pedido pasa a estado CONFIRMADO."""
-    asunto = f"Pedido Confirmado a Cocina: {pedido.codigo}"
+    """Notificación concisa a cocina cuando un pedido pasa a CONFIRMADO."""
+    cliente_nombre = getattr(pedido.cliente, "nombre_completo", str(pedido.cliente))
+    asunto = f"A Cocina: Pedido {pedido.codigo} Confirmado"
     mensaje = (
-        f"Nuevo pedido confirmado para elaboracion en Tablero Kanban:\n\n"
-        f"- Codigo          : {pedido.codigo}\n"
-        f"- Cliente         : {pedido.cliente.nombre_completo}\n"
-        f"- Total           : ${pedido.total:,.0f} CLP\n"
+        f"Pedido confirmado y enviado al Tablero Kanban de Cocina:\n\n"
+        f"• Pedido: {pedido.codigo}\n"
+        f"• Cliente: {cliente_nombre}\n"
+        f"• Total: ${pedido.total:,.0f} CLP (Prioridad: {pedido.get_prioridad_display()})"
     )
-    return emitir_alerta_sns(asunto, mensaje, tipo="PEDIDO_CONFIRMADO")
+    return emitir_alerta_sns(asunto, mensaje, tipo="COCINA")
